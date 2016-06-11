@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">sm16</string>
+    <string name="action_previous">Previous</string>
+    <string name="action_today">Today</string>
+    <string name="action_next">Next</string>
+    <string name="action_info">Info</string>
+    <string name="action_speakers">Speakers</string>
+    <string name="action_venues">Venues</string>
+    <string name="action_welcome">Welcome</string>
+    <string name="action_friday">Friday</string>
+    <string name="action_saturday">Saturday</string>
+    <string name="action_sunday">Sunday</string>
+    <string name="action_monday">Monday</string>
+    <string name="action_tuesday">Tuesday</string>
+    <string name="action_whatnext">What next?</string>
+    <string name="action_register">App Register</string>
+    <string name="action_sync">Update</string>
+    <string name="action_settings">Settings</string>
+</resources>

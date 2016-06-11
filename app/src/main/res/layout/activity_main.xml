@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent"
+    android:layout_gravity="center_horizontal"
+    tools:context="uk.co.summermadness.sm16.MainActivity">
+
+    <!-- With the new Toolbar you can apply a style and a theme. They are different! The style is local to the Toolbar view, for example the background color. The app:theme is instead global to all ui elements inflated in the Toolbar, for example the color of the title and icons. -->
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        app:title="SM16"
+        android:theme="@style/ToolbarTheme"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Dark"/>
+
+
+    <!--android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:theme="@style/ToolbarTheme"
+        app:titleTextAppearance="@style/Toolbar.TitleText"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+        /-->
+
+    <!-- http://stackoverflow.com/questions/26503149/how-do-i-style-appcompat-v7-toolbar-like-theme-appcompat-light-darkactionbar  -->
+    <!-- ThemeOverlay.AppCompat.Dark.ActionBar -->
+<!--
+    android:background="@color/action_bar_bkgnd"
+    app:theme="@style/ToolBarTheme" >
+-->
+
+    <ListView
+        android:id="@+id/listView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal" />
+</LinearLayout>

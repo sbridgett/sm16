@@ -1,0 +1,35 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.3"
+
+    defaultConfig {
+        applicationId "uk.co.summermadness.sm16"
+        minSdkVersion 7
+        targetSdkVersion 23
+        versionCode 1
+        versionName "0.5"
+    }
+    buildTypes {
+        debug {debuggable true}
+    }
+}
+
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'http://maven.batch.com/release'
+    }
+}
+
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile 'junit:junit:4.12'
+    compile 'com.android.support:appcompat-v7:23.4.0'
+    compile 'com.batch.android:batch-sdk:1.5+'
+    compile 'com.google.android.gms:play-services-base:9.0.2'
+    compile 'com.google.android.gms:play-services-gcm:9.0.2'
+}

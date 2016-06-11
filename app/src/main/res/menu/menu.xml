@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/menu">
+
+    <!-- "Previous", should appear as action button if possible -->
+    <!-- android:icon="@drawable/ic_favorite_black_48dp" -->
+    <!-- Icons: https://design.google.com/icons/ -->
+    <!-- Add “withText” as: showAsAction="ifRoom|withText" to include the text with the icon in the the action bar. -->
+
+    <item android:id="@+id/action_previous"
+        android:title="@string/action_previous"
+        android:icon="@drawable/ic_arrow_back_white_48dp"
+        app:showAsAction="ifRoom"/>
+
+    <item android:id="@+id/action_next"
+        android:title="@string/action_next"
+        android:icon="@drawable/ic_arrow_forward_white_48dp"
+        app:showAsAction="ifRoom"/>
+
+    <item android:id="@+id/action_today"
+        android:title="@string/action_today"
+        app:showAsAction="never"/>
+<!--    android:icon="@drawable/ic_today_white_48dp" -->
+
+    <item android:id="@+id/action_welcome"
+        android:title="@string/action_welcome"
+        app:showAsAction="never"/>
+
+    <item android:id="@+id/action_info"
+        android:title="@string/action_info"
+        app:showAsAction="never"/>
+
+    <item android:id="@+id/action_venues"
+        android:title="@string/action_venues"
+        app:showAsAction="never"/>
+
+    <item android:id="@+id/action_speakers"
+        android:title="@string/action_speakers"
+        app:showAsAction="never"/>
+
+    <item android:id="@+id/action_friday"
+        android:title="@string/action_friday"
+        app:showAsAction="never"/>
+
+    <item android:id="@+id/action_saturday"
+        android:title="@string/action_saturday"
+        app:showAsAction="never"/>
+
+    <item android:id="@+id/action_sunday"
+        android:title="@string/action_sunday"
+        app:showAsAction="never"/>
+
+    <item android:id="@+id/action_monday"
+        android:title="@string/action_monday"
+        app:showAsAction="never"/>
+
+    <item android:id="@+id/action_tuesday"
+        android:title="@string/action_tuesday"
+        app:showAsAction="never"/>
+
+    <item android:id="@+id/action_whatnext"
+        android:title="@string/action_whatnext"
+        app:showAsAction="never"/>
+
+    <!-- item android:id="@+id/action_register"
+        android:title="@string/action_register"
+        app:showAsAction="never"/ -->
+
+</menu>
+
+    <!-- Settings, should always be in the overflow -->
+    <!-- item android:id="@+id/action_settings"
+        android:title="@string/action_settings"
+        app:showAsAction="never"/ -->

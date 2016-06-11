@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="uk.co.summermadness.sm16">
+
+    <!-- This min sdk is also declared in gradle.build -->
+    <uses-sdk android:minSdkVersion="7" tools:overrideLibrary="com.google.android.gms.base, com.google.android.gms, com.google.firebase, com.google.android.gms.tasks, com.google.android.gms.gcm, com.google.android.gms.iid" />
+
+    <!-- my application version is stored in build.gradle (Module: app) file. alternatively can store in the manifest above with package as:
+    android:versionCode="2"
+    android:versionName="1.1"
+    -->
+
+    <!-- If not using gradle/Android studio, be sure to replace YOUR-PACKAGE-NAME with your actual package name, for example: com.google.android.
+     If you're using a gradle based build, the ${applicationId} macro will automatically do that for you.  -->
+    <!-- The following permissions are for the Batch.com push notification service -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <permission android:name="${applicationId}.permission.C2D_MESSAGE" android:protectionLevel="signature"/>
+    <uses-permission android:name="${applicationId}.permission.C2D_MESSAGE"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE"/>
+
+    <!-- Need these setting to pull data from internet - the first is already set above for Batch.com -->
+    <!--  uses-permission android:name="android.permission.INTERNET" / -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Added the following to permit min-sdk of 7 (as gms requires 9).
+    Also added the "xmlns:tools=..." at top
+    Can use commas if several libraries, eg: ...="com.example.lib1, com.example.lib2" -->
+
+
+    <!-- Added the SmApp name below - as Activity class is needed by batch -->
+    <application
+        android:name=".SmApp"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true">
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- The following is for Batch.com push notifications -->
+        <service android:name="com.batch.android.BatchPushService" />
+        <receiver android:name="com.batch.android.BatchPushReceiver" android:permission="com.google.android.c2dm.permission.SEND">
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                <category android:name="${applicationId}" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+
+</manifest>

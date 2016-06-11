@@ -1,0 +1,42 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <!-- or parent="Theme.AppCompat.Light.NoActionBar" as: Second, let's disable the theme-provided ActionBar. The easiest way is to have your theme extend from Theme.AppCompat.NoActionBar (or the light variant) within the res/styles.xml file:-->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+
+
+    <!-- android:textColorPrimary is the color of the title text in the Toolbar  -->
+    <!-- actionMenuTextColor is the color of the text of action (menu) items  -->
+    <!-- colorAccent Tints the input fields like checkboxes and text fields -->
+    <!-- colorControlNormal Applies to views in their normal state. -->
+    <!-- colorControlActivated Applies to views in their activated state (i.e checked or switches) -->
+    <!-- colorControlHighlight Applied to framework control highlights (i.e ripples or list selectors) -->
+
+    <style name="ToolbarTheme" parent="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+        <item name="android:textColorPrimary">@color/textColorPrimary</item>
+        <item name="actionMenuTextColor">@color/colorMenuText</item>
+        <item name="colorAccent">@color/cursorAccent</item>
+        <item name="colorControlNormal">@color/controlNormal</item>
+        <item name="colorControlActivated">@color/controlActivated</item>
+        <item name="colorControlHighlight">@color/controlActivated</item>
+    </style>
+    <!-- Can add these 'selectableItemBackground' and 'selectableItemBackgroundBorderless' inside the above 'ToolbarTheme' if you want clicking icons to trigger a ripple effect -->
+    <!--
+    <item name="selectableItemBackground">?android:selectableItemBackground</item>
+    <item name="selectableItemBackgroundBorderless">?android:selectableItemBackground</item>
+    -->
+
+
+    <!-- This configures the styles for the title within the Toolbar  -->
+    <!--style name="Toolbar.TitleText" parent="TextAppearance.Widget.AppCompat.Toolbar.Title">
+        <item name="android:textSize">21sp</item>
+        <item name="android:textStyle">italic</item>
+    </style-->
+
+</resources>
