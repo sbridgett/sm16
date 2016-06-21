@@ -2,8 +2,11 @@
 
     <!-- Base application theme. -->
     <!-- or parent="Theme.AppCompat.Light.NoActionBar" as: Second, let's disable the theme-provided ActionBar. The easiest way is to have your theme extend from Theme.AppCompat.NoActionBar (or the light variant) within the res/styles.xml file:-->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
+    <!-- was: style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar" but failed -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <!-- Customize your theme here - but no need to when set to no action bar -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>

@@ -18,15 +18,19 @@
 
 # Setting for the batch push notification service:
 
--keep class com.batch.** {
-  *;
-}
+# SJB - The firebase quickstart demo doesn't have any rules in its proguard-rules.pro file:
+ # https://github.com/firebase/quickstart-android/blob/master/messaging/app/proguard-rules.pro
+# so commenting out all the rules below which were for catch:
 
-# The following may have changed:
--keep class com.google.android.gms.** {
-  *;
-}
+#-keep class com.batch.** {
+#  *;
+#}
 
--dontwarn com.batch.android.mediation.**
+## The following may have changed:
+#-keep class com.google.android.gms.** {
+#  *;
+#}
 
--dontwarn com.batch.android.BatchPushService
+#-dontwarn com.batch.android.mediation.**
+
+#-dontwarn com.batch.android.BatchPushService

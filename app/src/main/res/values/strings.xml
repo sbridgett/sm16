@@ -11,8 +11,8 @@
     <string name="action_saturday">Saturday</string>
     <string name="action_sunday">Sunday</string>
     <string name="action_monday">Monday</string>
-    <string name="action_tuesday">Tuesday</string>
     <string name="action_whatnext">What next?</string>
+    <string name="action_inbox">Inbox</string>
     <string name="action_register">App Register</string>
     <string name="action_sync">Update</string>
     <string name="action_settings">Settings</string>

@@ -24,6 +24,10 @@
         app:showAsAction="never"/>
 <!--    android:icon="@drawable/ic_today_white_48dp" -->
 
+    <item android:id="@+id/action_inbox"
+        android:title="@string/action_inbox"
+        app:showAsAction="never"/>
+
     <item android:id="@+id/action_welcome"
         android:title="@string/action_welcome"
         app:showAsAction="never"/>
@@ -56,9 +60,9 @@
         android:title="@string/action_monday"
         app:showAsAction="never"/>
 
-    <item android:id="@+id/action_tuesday"
+    <!-- item android:id="@+id/action_tuesday"
         android:title="@string/action_tuesday"
-        app:showAsAction="never"/>
+        app:showAsAction="never"/ -->
 
     <item android:id="@+id/action_whatnext"
         android:title="@string/action_whatnext"

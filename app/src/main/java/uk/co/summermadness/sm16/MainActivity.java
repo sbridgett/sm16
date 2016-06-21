@@ -1,6 +1,10 @@
 package uk.co.summermadness.sm16;
 
+//  If your organization has a firewall that restricts the traffic to or from the Internet, you need to configure it to allow connectivity with FCM in order for your Firebase Cloud Messaging client apps to receive messages. The ports to open are: 5228, 5229, and 5230. FCM typically only uses 5228, but it sometimes uses 5229 and 5230. FCM doesn't provide specific IPs, so you should allow your firewall to accept outgoing connections to all IP addresses contained in the IP blocks listed in Google's ASN of 15169.
+
 // Batch (push notifications) is compatible with Android 2.3 and higher. .
+
+// Batch - Advanced - Intercepting notifications: https://batch.com/doc/android/advanced/intercepting-notifications.html
 
 // Batch.Push : Unable to use GCM because the Google Play Services library is not integrated correctly or not up-to-date. Please include GooglePlayServices into your app (at least -base and -gcm modules), more info: https://batch.com/
 // In gradle.build
@@ -29,6 +33,8 @@ package uk.co.summermadness.sm16;
 //        int version = Build.VERSION.SDK_INT;
 //        String versionRelease = Build.VERSION.RELEASE;
 
+
+//import android.app.ActionBar;
 import android.app.Application;
 import android.app.Dialog;
 import android.app.NotificationManager;
@@ -36,9 +42,11 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.sqlite.SQLiteStatement;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.TaskStackBuilder;
 import android.support.v7.app.AlertDialog;
@@ -59,6 +67,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -78,9 +87,36 @@ import uk.co.summermadness.sm16.SmDataArray;
 
 // To retrieve the app version number (set in build.gradle Module:app) use the getPackageInfo(java.lang.String, int) method of PackageManager
 // Imports for Batch:
-import com.batch.android.Batch;
+// import com.batch.android.Batch;
+
+// Check for Google Play - used by batch and GCM and ?Firebase messenging:
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
+
+// For Firebase cloud messenging (has replaced Google cloud messenging)
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.messaging.FirebaseMessaging;
+
+// SQLite database access:
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.database.Cursor;
+
+// DB actions are:
+//   - create database - using data from array.
+//   - update data from web (or notification messages) removing any viewed mark from updated rows.
+//   - mark row as viewed by user (and update the touched table cell as non-bold)
+//   - maintain version info in table - for all versions downloaded to check all received
+//   - keep a version number in each row - so don't revert to earlier version
+// - Read all 'Contents' rows & colours
+// - Read Title for specified content (page number)
+// - Read text & image_id for the specified title (line number)
+// DB structure:
+  //ID, Type/page_code
+  // index on page+line which is unique row id
+
+
+
 //import com.batch.android.Config;
 //import com.batch.android.PushNotificationType;
 
@@ -296,17 +332,26 @@ public class MainActivity extends AppCompatActivity {
 //public class MainActivity extends Activity {
 
     private Toolbar toolbar = null; // Setting to null as way of indicating app not created.
-    private List<String> items;
+    private ListView listView = null;
+    private List<String> ids, items;
     private ArrayAdapter<String> adapter;
+    private Dialog dialog = null;
+    static final String DBNAME = "sm16db";
+    private SQLiteDatabase db = null;
 
     private int lastNotificationId = 0;
 
     static final String STATE_CURRENT_PAGE = "current_page";
 
+    private static final String TAG = "MainActivity";
+
     // Defined Array values to show in ListView. (Should use a constructor function).
     // Can store the data in separate class in a separte file (which can be written by python)
     //static final String[][][] data;
-    private final static String[][][] data = SmDataArray.data;
+    // private final static
+    // Can this be modified:
+    String[][][] data = SmDataArray.data;
+
     // or in an XML resource file, that is imported in onCreate
     // Can only store One dimensional arrays in arrays.xml resource. Could use JSON within each element, but need to use code for any spaces within the text.
     // data = getResources().getStringArray(R.array.data);
@@ -316,8 +361,12 @@ public class MainActivity extends AppCompatActivity {
     // See: https://developer.android.com/reference/android/widget/ArrayAdapter.html
 
 
-    static final int iWelcome=0, iInfo=1, iVenues=2, iSpeakers=3, iFriday=4, iSaturday=5, iSunday=6, iMonday=7, iTuesday=8, iWhatNext=9;
-    int iCurrent=-1; // iWelcome; // Start on the welcome page.
+    static final int iNone=-2, iContents=-1, iWelcome = 0, iInfo = 1, iVenues = 2, iSpeakers = 3, iFriday = 4, iSaturday = 5, iSunday = 6, iMonday = 7, iWhatNext = 8, iInbox = 9;
+    int iCurrent = iNone; // iWelcome; // Start on the welcome page.
+    private String current_page_num="", current_title="", current_detail_title="", current_detail_text="";
+    int current_detail_image = -1; // or long
+
+    boolean viewing_a_page = false; // For the onBack() button so when going to a page pops back - should really use another activity for the contents view.
 
 /*
     // static final String STATE_SCORE = "playerScore";
@@ -363,13 +412,21 @@ public class MainActivity extends AppCompatActivity {
     private boolean checkPlayServices() {
         // For more info see: https://developers.google.com/android/guides/api-client#handle_connection_failures
 
+        // More examples: http://www.programcreek.com/java-api-examples/index.php?class=com.google.android.gms.common.ConnectionResult&method=startResolutionForResult
+
         // Request code to use when launching the resolution activity
         // private static
         final int PLAY_SERVICES_RESOLUTION_REQUEST = 1001; // or 1972 ???
 
+        // Check for Google Play Services APK
+        // Apps that rely on the Play Services SDK should always check the device for a compatible Google Play services APK before accessing Google Play services features. It is recommended to do this in two places: in the main activity's onCreate() method, and in its onResume() method. The check in onCreate() ensures that the app can't be used without a successful check. The check in onResume() ensures that if the user returns to the running app through some other means, such as through the back button, the check is still performed. If the device doesn't have a compatible Google Play services APK, your app can call GooglePlayServicesUtil.getErrorDialog() to allow users to download the APK from the Google Play Store or enable it in the device's system settings. For a code example, see Setting up Google Play Services.
+        // See: http://developer.android.com/google/play-services/setup.html
+
         GoogleApiAvailability googleAPI = GoogleApiAvailability.getInstance();
         int result = googleAPI.isGooglePlayServicesAvailable(this);
-        if(result == ConnectionResult.SUCCESS) {return true;}
+        if (result == ConnectionResult.SUCCESS) {
+            return true;
+        }
 //        if(googleAPI.isUserResolvableError(result)) {
         googleAPI.getErrorDialog(MainActivity.this, result, PLAY_SERVICES_RESOLUTION_REQUEST).show();
         // wait for onActivityResult call (see below)??
@@ -377,32 +434,31 @@ public class MainActivity extends AppCompatActivity {
 //        else{
         Toast.makeText(getApplicationContext(), googleAPI.getErrorString(result), Toast.LENGTH_LONG).show();
         // public Task<Void> makeGooglePlayServicesAvailable (Activity activity)
-        showAlertDialog(MainActivity.this, "Google play services ...", googleAPI.getErrorString(result), false);
+        //showAlertDialog(MainActivity.this, "Google play services ...", googleAPI.getErrorString(result), false);
 //        }
         return false;
     }
-// ====================================================================================
+
+/*
+    // ====================================================================================
 // Batch (push notifications)
     @Override
-    protected void onStart()
-    {
+    protected void onStart() {
         super.onStart();
 
         int sdk_version = android.os.Build.VERSION.SDK_INT; // NOTE: This SDK_INT is available since Donut (android 1.6 / API4), previously SDK
-        if ( (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.GINGERBREAD) // As Batch needs Sdk 9 or above
-                && checkPlayServices() ) {   // Needs working version of Google play services.
-try {
-    Batch.onStart(this);
-}
-catch (Exception e){
+        if ((android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.GINGERBREAD) // As Batch needs Sdk 9 or above
+                && checkPlayServices()) {   // Needs working version of Google play services.
+            try {
+                Batch.onStart(this);
+            } catch (Exception e) {
                 Toast.makeText(getApplicationContext(), "On batch start() please udpate your google play service", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
     @Override
-    protected void onStop()
-    {
+    protected void onStop() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.GINGERBREAD) {
             Batch.onStop(this);
         }
@@ -410,8 +466,7 @@ catch (Exception e){
     }
 
     @Override
-    protected void onDestroy()
-    {
+    protected void onDestroy() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.GINGERBREAD) {
             Batch.onDestroy(this);
         }
@@ -419,15 +474,25 @@ catch (Exception e){
     }
 
     @Override
-    protected void onNewIntent(Intent intent)
-    {
+    protected void onNewIntent(Intent intent) {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.GINGERBREAD) {
             Batch.onNewIntent(this, intent);
         }
         super.onNewIntent(intent);
     }
 
-
+    // https://batch.com/doc/android/advanced/general.html#_custom-push-implementation
+    // If you have your own implementation of GCM push you may have conflicts with Batch Push. GCM broadcasts the push intent to all broadcast receivers so if you send a push via Batch, your own broadcast receiver will also catch it.
+    // To avoid conflict, we provide a helper to detect if a push will be handled by Batch or not, here's how you should implement your own push receiver:
+    // BUT I think this is for GCMBroadcastReceiver. onReceive() ie. google cloud messenging, not for firebase cloud messenging
+    //@Override
+    //public void onReceive(Context context, Intent intent) {
+    //    if (Batch.Push.isBatchPush(intent)) {
+    //        return;
+    //    }
+        // Your push implementation
+    //}
+*/
 
 // ====================================================================================
 // My Network pull functions:
@@ -472,6 +537,7 @@ catch (Exception e){
                 return "Unable to retrieve web page. URL may be invalid.";
             }
         }
+
         // onPostExecute displays the results of the AsyncTask.
         @Override
         protected void onPostExecute(String result) {
@@ -483,9 +549,68 @@ catch (Exception e){
 //                Log.i("INFO", response);
 //                responseView.setText(response);
 //            }
-
-
+            if (!appendToFile(result)) {
+                showAlertDialog(MainActivity.this, "Append failed", "Append to file failed", false);
+            }
             showAlertDialog(MainActivity.this, "HTTP result:", result, false);
+            boolean update_view = false;
+            if (!result.equals("FAILED")) {//  When limit is negative (egt. -1), split(regex, limit), the behaviour of removing trailing blanks from the resulting array is disabled: ".".split("\\.", -1) // returns an array of two blanks, ie ["", ""]
+                String[] lines = result.split("\\r?\\n"); // To split on Windows (\r\n) or unix (\n), as is a regexp where \r is optional.
+                for (int i = 0; i < lines.length; i++) {  // or: for(String line : lines) {
+                    if (lines[i].equals("")) {
+                        continue;
+                    } // eg. empty line after newline at end of file
+                    String[] cols = lines[i].split("\\t"); // one \ is ok as is escaped to tab ?
+                    if ((cols.length == 0) || (cols[0].equals(""))) {
+                        continue;
+                    } // length==0 shouldn't happen?
+                    else if (cols[0].equals("END")) {
+                        showAlertDialog(MainActivity.this, "found END ok", "Found END in line: " + lines[i], false);
+                    } // record that end was found ?
+                    else if (cols[0].equals("MAIL")) {
+                        showAlertDialog(MainActivity.this, "found MAIL ok", "Found MAIL in line: " + lines[i], false);
+                        data[iInbox][2] = cols;
+                        if (iCurrent == iInbox) {
+                            update_view = true;
+                        }
+                    } // append to the mail list. Need to add all cols.
+                    else {
+                        showAlertDialog(MainActivity.this, "Slitting line into nums", "Splitting into nums: '" + cols[0] + "' in line: " + lines[i], false);
+                        String[] nums = cols[0].split("\\."); // as expects a regexp, and first \ escapes the second \
+                        if (nums.length == 2) {
+                            int page = -1, line = -1;
+                            try {
+                                page = Integer.parseInt(nums[0]);
+                            } catch (Exception e) { // raise error
+                                showAlertDialog(MainActivity.this, "ParseInt", "Parse page num failed for " + nums[0] + " in line: " + lines[i], false);
+                            }
+                            try {
+                                line = Integer.parseInt(nums[1]);
+                            } catch (Exception e) { // raise error
+                                showAlertDialog(MainActivity.this, "ParseInt", "Parse line num failed for " + nums[1] + " in line: " + lines[i], false);
+                            }
+                            if ((page > 0) && (page < data.length)) {
+                                if ((line > 0) && (line < data[page].length)) {
+                                    data[page][line] = cols;
+                                    if (iCurrent == page) {
+                                        update_view = true;
+                                    }
+                                } else {// error msg.
+                                    showAlertDialog(MainActivity.this, "Line out of range", "Line " + Integer.toString(line) + " in line: " + lines[i], false);
+                                }
+                            } else { // error msg.
+                                showAlertDialog(MainActivity.this, "Page out of range", "Page " + Integer.toString(page) + " in line: " + lines[i], false);
+                            }
+                        } else {// alert error
+                            showAlertDialog(MainActivity.this, "Nums != 2", "nums.length != 2 in " + nums + " in line: " + lines[i], false);
+                        }
+                    }
+                }
+                if (update_view) {
+                    setListView(iCurrent, current_page_num, current_title);
+                } // as the lines have changed or mail lines added so can't just do:  adapter.notifyDataSetChanged();
+            }
+
             //textView.setText();
 
 // However, there is the equally straightforward (and built into android) org.json package. To parse the returned string into a JSONObject can be achieved with the following code snippet.
@@ -507,14 +632,24 @@ catch (Exception e){
     // the web page content as a InputStream, which it returns as
     // a string.
     private String downloadUrl(String myurl) throws IOException {
+        HttpURLConnection conn = null;
         InputStream is = null;
         // Only display the first 500 characters of the retrieved
         // web page content.
-        int len = 500;
+        //int len = 500;
+        String contentAsString = "FAILED";
+
+        // Work around pre-Froyo (pre-Android 2.2) bugs in HTTP connection reuse.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.FROYO) { // depreciated: if(Integer.parseInt(Build.VERSION.SDK)<...
+            System.setProperty("http.keepAlive", "false");
+        }
 
         try {
             URL url = new URL(myurl);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn = (HttpURLConnection) url.openConnection();
+            // HttpURLConnection will follow up to five HTTP redirects. It will follow redirects from one origin server to another. This implementation doesn't follow redirects from HTTPS to HTTP or vice versa.
+            // If the HTTP response indicates that an error occurred, getInputStream() will throw an IOException. Use getErrorStream() to read the error response. The headers can be read in the normal way using getHeaderFields(),
+            // From: https://developer.android.com/reference/java/net/HttpURLConnection.html
             conn.setReadTimeout(10000 /* milliseconds */);
             conn.setConnectTimeout(15000 /* milliseconds */);
             conn.setRequestMethod("GET");
@@ -523,12 +658,18 @@ catch (Exception e){
             conn.connect();
             int response = conn.getResponseCode();
             Log.d(DEBUG_TAG, "The response is: " + response);
-            is = conn.getInputStream();
+            if (response == 200) { // 200 OK
+                // 304 Not Modified (RFC 7232) - Indicates that the resource has not been modified since the version specified by the request headers If-Modified-Since or If-None-Match. In such case, there is no need to retransmit the resource since the client still has a previously-downloaded copy.[28]
 
-            // Convert the InputStream into a string
-            String contentAsString = readIt(is, len);
-            return contentAsString;
+                is = conn.getInputStream();
 
+                // Convert the InputStream into a string
+                contentAsString = readIt(is); // , len);
+            } else {
+                showAlertDialog(MainActivity.this, "Response " + Integer.toString(response), conn.getResponseMessage(), false);
+                // getResponseMessage()
+                // else conn.getErrorStream()
+            }
 // or:
 //        }
 //        catch(Exception e) {
@@ -537,14 +678,18 @@ catch (Exception e){
 //        }
 // See: http://www.androidauthority.com/use-remote-web-api-within-android-app-617869/
 
-        // Make sure that the InputStream is closed after the app has finished using it.
+            // Make sure that the InputStream is closed after the app has finished using it.
         } finally {
             if (is != null) {
                 is.close();
+            }  // should try try { ..} catch (IOException e) {...}
+            if (conn != null) {
+                conn.disconnect();
             }
+            // To reduce latency, this class may reuse the same underlying Socket for multiple request/response pairs. As a result, HTTP connections may be held open longer than necessary. Calls to disconnect() may return the socket to a pool of connected sockets. This behavior can be disabled by setting the http.keepAlive system property to false before issuing any HTTP requests.
         }
+        return contentAsString;
     }
-
 
 
     // An InputStream is a readable source of bytes. Once you get an InputStream, it's common to decode or convert it into a target data type. For example, if you were downloading image data, you might decode and display it like this:
@@ -557,30 +702,32 @@ catch (Exception e){
 
     // In the example shown above, the InputStream represents the text of a web page. This is how the example converts the InputStream to a string so that the activity can display it in the UI:
 // Reads an InputStream and converts it to a String.
-    public String readIt(InputStream stream, int len) throws IOException, UnsupportedEncodingException {
-        Reader reader = null;
-        reader = new InputStreamReader(stream, "UTF-8");
-        char[] buffer = new char[len];
-        reader.read(buffer);
-        return new String(buffer);
+    public String readIt(InputStream stream) throws IOException, UnsupportedEncodingException {   // , int len)
+        //Reader reader = null;
+        //reader = new InputStreamReader(stream, "UTF-8");
+        //char[] buffer = new char[len];
+        //reader.read(buffer);
+        //return new String(buffer);
+
 // BUT for reading more data can use: http://www.androidauthority.com/use-remote-web-api-within-android-app-617869/
-//        try {
-//            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
-//            StringBuilder stringBuilder = new StringBuilder();
-//            String line;
-//            while ((line = bufferedReader.readLine()) != null) {
-//                stringBuilder.append(line).append("\n");
-//            }
-//            bufferedReader.close();
-//            return stringBuilder.toString();
-//        }
+        try {
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(stream, "UTF-8")); // (new InputStreamReader(urlConnection.getInputStream()));
+            StringBuilder stringBuilder = new StringBuilder();
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                stringBuilder.append(line).append("\n");
+            }
+            bufferedReader.close();
+            return stringBuilder.toString();
+        } catch (Exception e) {  // would be  (IOException e) {
+            return "FAILED";
+        }
 //        finally{
 //            urlConnection.disconnect();
 //        }
 
 
     }
-
 
 
     @Override
@@ -614,7 +761,7 @@ and this snippet to the activity :-
 
         // The data is held in memory only until the application is alive, in other words this data is lost when the application closes, so in your case when you force close the app onSaveInstanceState is not used.
         // from: http://stackoverflow.com/questions/9846817/when-is-the-savedinstancestate-bundle-actually-used
-        showAlertDialog(MainActivity.this, "In onCreate()", "Starting onCreate now", false);
+        // showAlertDialog(MainActivity.this, "In onCreate()", "Starting onCreate now", false);
         if (toolbar != null) {
             showAlertDialog(MainActivity.this, "OK", "Toolbar already created", false);
             return;
@@ -627,11 +774,25 @@ and this snippet to the activity :-
             //  See more at: http://www.mzan.com/article/456211-activity-restart-on-rotation-android.shtml#sthash.KbTc9Spl.dpuf
             //return;
         }
+
+        data[0][0] = new String[]{"0.0", "Changed!"};
+
 //  android:configChanges="orientation|keyboard|keyboardHidden|screenSize|screenLayout|uiMode"
 
         // NOTIFICATION NOT NEEDED AT PRESENT: showNotification("My Notify", "Starting app", 1);
+        add_array_to_database();
         initialise_user_interface(savedInstanceState);
 
+        //int sdk_version = android.os.Build.VERSION.SDK_INT; // NOTE: This SDK_INT is available since Donut (android 1.6 / API4), previously SDK
+        if ((android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.GINGERBREAD) // As Batch needs Sdk 9 or above
+                && checkPlayServices()) {   // Needs working version of Google play services.
+            //try {
+                firebase_cloud_messenging();
+            //    Batch.onStart(this);
+            //} catch (Exception e) {
+            //    Toast.makeText(getApplicationContext(), "On batch start() please udpate your google play service", Toast.LENGTH_SHORT).show();
+            //}
+        }
 
         //  urlText = (EditText) findViewById(R.id.myUrl);
         //  urlText.getText().toString();
@@ -640,10 +801,97 @@ and this snippet to the activity :-
     }
 
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.GINGERBREAD) { // As Batch needs Sdk 9 or above
+             checkPlayServices();   // Needs working version of Google play services - should check this in onCreate and onResume (ie. back button pressed from another app).
+        }
+    }
+
+
     protected void initialise_user_interface(Bundle savedInstanceState) {
-        showAlertDialog(MainActivity.this, "initialise_user_interface()", "initialise_user_interface", false);
+        //showAlertDialog(MainActivity.this, "initialise_user_interface()", "initialise_user_interface", false);
         setContentView(R.layout.activity_main);
 
+
+/*
+        // ===========================================================================
+        // Good toolbar example code: http://stackoverflow.com/questions/26651602/display-back-arrow-on-toolbar-android
+        // especially the last two answers:
+
+        // toolbar
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        // add back arrow to toolbar
+        if (getSupportActionBar() != null){
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // handle arrow click here
+        if (item.getItemId() == android.R.id.home) {
+            finish(); // close this activity and return to preview activity (if there is any)
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+
+    You can still use the AppCompatActivity, you don't need to stop using it just so that you can use a <android.support.v7.widget.Toolbar> in your xml. Just turn off the action bar style as follows:
+
+    First, derive a style from one of the NoActionBar themes that you like in your styles.xml, I used Theme.AppCompat.Light.NoActionBar like so:
+
+    <style name="SuperCoolAppBarActivity" parent="Theme.AppCompat.Light.NoActionBar">
+    <item name="colorPrimary">@color/primary</item>
+
+    <!-- colorPrimaryDark is used for the status bar -->
+    <item name="colorPrimaryDark">@color/primary_dark</item>
+            ...
+            ...
+    </style>
+
+    In your App's manifest, choose the child style theme you just defined, like so:
+
+    <activity
+    android:name=".activity.YourSuperCoolActivity"
+    android:label="@string/super_cool"
+    android:theme="@style/SuperCoolAppBarActivity">
+    </activity>
+
+    In your Activity Xml, if the toolbar is defined like so:
+
+            ...
+    <android.support.v7.widget.Toolbar
+    android:id="@+id/toolbar"
+    android:layout_width="match_parent"
+    android:layout_height="?attr/actionBarSize"
+            />
+            ...
+
+    Then, and this is the important part, you set the support Action bar to the AppCompatActivity that you're extending, so that the toolbar in your xml, becomes the action bar. I feel that this is a better way, because you can simply do the many things that ActionBar allows, like menus, automatic activity title, item selection handling, etc. without resorting to adding custom click handlers, etc.
+
+    In your Activity's onCreate override, do the following:
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_super_cool);
+        findViewById(R.id.toolbar);
+
+        setSupportActionBar(toolbar);
+        //Your toolbar is now an action bar and you can use it like you always do, for example:
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+    }
+
+
+    // ===========================================================================
+*/
         // Toolbar seems better than ActionBar
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         if (toolbar == null) {
@@ -656,8 +904,12 @@ and this snippet to the activity :-
 
         setSupportActionBar(toolbar);
 
-        items = new ArrayList<String>(); // could optionally pass the number of elements?
+        // Set initial list capactity to 30 (default is 10):
+        ids = new ArrayList<String>(30); // is the ids for the items that correspond to the lines in the ListView table
+        items = new ArrayList<String>(30); // could optionally pass the number of elements?
+
         //clear the actual results
+        // ids.clear();
         // items.clear();
 
         ///  Collections.addAll(items, data[iWelcome]); // Collections.addAll() might be faster than items.addAll(welcome) ?
@@ -679,14 +931,14 @@ and this snippet to the activity :-
 
         //data = SmDataArray.data;
 
-        if (iCurrent==-1) {setListView(iWelcome);} // or maybe initialise iCurent=iWelcome.
+        if (iCurrent==iNone) {setListView(iContents, "C", "Contents");} // will initially be the iContents
 
         // Get ListView from XML:
-        ListView listView = (ListView) findViewById(R.id.listView);
+        listView = (ListView) findViewById(R.id.listView);
 
         //showAlertDialog(MainActivity.this, "Test", "Test dialog again", false);
 
-        showAlertDialog(MainActivity.this, "Test", "Test dialog again",false);
+        //showAlertDialog(MainActivity.this, "Test", "Test dialog again",false);
 
         // Assign adapter to ListView
         if (listView == null) {
@@ -713,28 +965,52 @@ and this snippet to the activity :-
                 //where position is the zero based position of the item in the list and you can scroll to show any item using
                 // myList.smoothScrollToPosition(position);
 
+                if (iCurrent == iContents) {
+                    if (position >= ids.size()) {showAlertDialog(MainActivity.this, "Position out of range", "position="+Integer.toString(position)+" >= size="+Integer.toString(ids.size()), false);}
+                    setListView(position, ids.get(position), items.get(position));
+                    return;
+                }
                 // Show Alert:
-                int line_index = position +1; // as the first element is the title for that page.
-                String title = data[iCurrent][line_index][0];
-                String message = "";
+/*
+                int line_index = position +1; // +1 as the first element in data[iCurrent] is the title for that page.
+
+                String[] line = data[iCurrent][line_index];
+                String title = (line.length>1 ? line[1] : ""); // as 0 is the page.line (eg. "1.2")
+                String message = (line.length>2) ? "\n"+line[2] : "";
                 int image_id = -1;
-                switch (data[iCurrent][line_index].length) {
-                    case 1: break;
-                    case 2:
-                        message = "\n"+data[iCurrent][line_index][1];
-                        break;
+                if (line.length>3) {
+                    String image_id_string = line[3];
+                    try {
+                        image_id = Integer.parseInt(image_id_string);
+                    } catch (NumberFormatException nfe) {
+                        showAlertDialog(MainActivity.this, "Error", "Could not parse image_id_string to an integer:" + image_id_string, false);
+                    }
+                }
+*/
+/*
+                switch (line.length) {
+                    case 2: break;
                     case 3:
-                        String image_id_string = data[iCurrent][line_index][1];
+                        message = "\n"+line[2];
+                        break;
+                    case 4:
+                        String image_id_string = line[3];
                         try {
                             image_id = Integer.parseInt(image_id_string);
                         } catch(NumberFormatException nfe) {
                             showAlertDialog(MainActivity.this, "Error", "Could not parse image_id_string to an integer:"+image_id_string, false);
                         }
-                        message = "\n"+data[iCurrent][line_index][2];
+                        message = "\n"+line[2];
                         break;
+                    default: message="More columns than expected!";
                 }
+*/
 
-                showCustomDialog(MainActivity.this, title, message, image_id);
+//                showCustomDialog(MainActivity.this, title, message, image_id);
+
+                if (get_details_from_database(ids.get(position))) {
+                    showCustomDialog(MainActivity.this, current_detail_title, current_detail_text, current_detail_image);
+                }
 
 //                Toast toast = Toast.makeText(getApplicationContext(),
 //                         title + message + "\nImage: "+String.valueOf(image_id),
@@ -749,8 +1025,6 @@ and this snippet to the activity :-
 
             });
 
-
-
 //        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
 //        fab.setOnClickListener(new View.OnClickListener() {
 //            @Override
@@ -760,6 +1034,402 @@ and this snippet to the activity :-
 //            }
 //        });
     }
+
+
+public void add_array_to_database() {
+    // Good info about using sqlite in Android: http://stackoverflow.com/questions/433392/how-do-i-use-prepared-statements-in-sqlite-in-android
+    eg:
+    //String sql = "UPDATE table_name SET column_2=? WHERE column_1=?";
+    //SQLiteStatement statement = db.compileStatement(sql);
+    //int id = 7;
+    //String stringValue = "hi there";
+    //statement.bindString(1, stringValue);
+    //statement.bindLong(2, id);
+    // int numberOfRowsAffected = statement.executeUpdateDelete();
+
+    if (db == null) {
+        // The following is from Conetxt (as another ordeting of these arguments in database)
+        db = openOrCreateDatabase(DBNAME, Context.MODE_PRIVATE, null);
+        // or: db = dbHelper.getWritabledatabase();
+    }
+
+    showAlertDialog(MainActivity.this, "DB Version", "dbVersion="+Integer.toString(db.getVersion()), false);
+
+    if (db.getVersion() == SmDataArray.dataVersion) {return;}
+
+    showAlertDialog(MainActivity.this, "DB rebuild", "SmDataArray.dataVersion="+Integer.toString(SmDataArray.dataVersion), false);
+    // execSQL(..) returns void (ie. nothing), but raises exception on error:
+    db.execSQL("DROP TABLE IF EXISTS page;");    // just for developing
+    db.execSQL("CREATE TABLE IF NOT EXISTS page(id VARCHAR, type VARCHAR, title VARCHAR, text VARCHAR, image INT);");
+// *** add fields for version and viewed.
+// *** add index on type for faster search, and on primary on id.
+    // editRollno.getText()
+
+    try {
+        db.beginTransaction();
+        String sql = "INSERT INTO page (id,type,title,text,image) VALUES(?,?,?,?,?);";
+        SQLiteStatement stm = db.compileStatement(sql);
+        // String stm = "INSERT INTO page VALUES('" + line[0] + "','C', '" + line[1] + "','" + line[2] + "', '');"
+        for (int i = 0; i < data.length; i++) {
+            String page_num="";
+            if (data[i].length > 0) {
+                String[] line = data[i][0];
+
+                if (line.length > 0) {
+                    Log.d("DB", "ID: " + line[0]);
+                }
+                if (line.length > 2) {
+                    // eg: {"0.0", "Welcome", "red"},
+                    page_num =line[0]; // eg: "0" for Welcome page.
+                    stm.bindString(1, page_num);  // id. Note these bindString(...) indexes are 1-based positions.
+                    stm.bindString(2, "C"); // type, where C is for type Content:
+                    stm.bindString(3, line[1]); // title
+                    stm.bindString(4, line[2]); // text
+
+                    long image_id = -1;
+                    if (line.length>3) {
+                        String image_id_string = line[3];
+                        try {
+                            image_id = Integer.parseInt(image_id_string);
+                        } catch (NumberFormatException nfe) {
+                            showAlertDialog(MainActivity.this, "Error", "Could not parse image_id_string to an integer:" + image_id_string, false);
+                        }
+                    }
+                    stm.bindLong(5, image_id); // image
+                    // stm.bindAllArgsAsStrings(new String[]{line[0], "C", line[1], line[2], ""}); // BUT needs API 11, I've set minTarget to 7
+                    long rowId = stm.executeInsert();
+                } else {
+                    Log.d("DB", "Line too short");
+                }
+            }
+
+            for (int j = 1; j < data[i].length; j++) {
+                String[] line = data[i][j]; // C is for type Content:
+                if (line.length == 0 || line.length == 1) {  // length=0 for the empty Inbox lines. length=1 shouldn't occur.
+                    continue;
+                }
+                // Log.d("DB", "ID: " + line[0]);
+                String id = line[0];
+                String title = line[1];
+                String text = (line.length > 2) ? line[2] : "";
+                String image = (line.length > 3) ? line[3] : "";
+
+                if ( ! id.substring(0,1).equals(page_num) ) {showAlertDialog(MainActivity.this, "DB create error", "line id="+id+" doesn't match page_num="+page_num+" for title="+title, false);}
+
+                stm.bindString(1, id);  // id. Note bindString() uses 1-based position indexes, ie. 1 here.
+                stm.bindString(2, 'P' + page_num); // is the page number, previously corresponded to eg: iWelcome, as was (Integer.toString(i))
+                stm.bindString(3, title);
+                stm.bindString(4, text);
+                stm.bindString(5, image);
+                long rowId = stm.executeInsert();
+//                db.execSQL("INSERT INTO page VALUES('" + line[0] + "',+"', '" + title + "','" + text + "', '" +image+ "');");
+            }
+        }
+        db.setTransactionSuccessful();
+    } catch (Exception e) {
+        Log.w("Exception:", e);
+    } finally {
+        db.endTransaction();
+    }
+
+    db.setVersion(SmDataArray.dataVersion);
+    db.close();
+    db = null; // To indicate that it is closed.
+
+    // db.execSQL("UPDATE student SET name='" + editName.getText() + "',marks='" +
+    //        editMarks.getText() + "' WHERE rollno='" + editRollno.getText() + "'");
+
+    // In the above code, the openOrCreateDatabase() function is used to open the StudentDB database if it exists or create a new one if it does not exist.
+    // The first parameter of this function specifies the name of the database to be opened or created.
+    // The second parameter, Context.MODE_PRIVATE indicates that the database file can only be accessed by the calling application or all applications sharing the same user ID.
+    // The third parameter is a Cursor factory object which can be left null if not required.
+}
+
+    public void get_page_from_database(String page_num, List<String> ids, List<String> items)
+    {
+    // page_num will be "C" for Contents, or "P1", "P2", etc for the other pages.
+    if (db==null) {
+        // The following is from Conetxt (as another ordeting of these arguments in database)
+        db = openOrCreateDatabase(DBNAME, Context.MODE_PRIVATE, null);
+    }
+    // for parameterised queries, can use db.query(...)
+    Cursor c = db.rawQuery ("SELECT id, title FROM page WHERE type='?'", new String[]{page_num});
+    //String msg;
+    //if (c.getCount() == 0) {
+    //    msg = "No content records found";
+    //}
+    //else {
+        //StringBuffer buffer = new StringBuffer();
+        while (c.moveToNext()) {
+            ids.add(c.getString(0)); // data[i][0][0] is the number, eg: "1.00"
+            items.add(c.getString(1)); // data[i][0][0] is the number, eg: "1.00"
+            //String id = line[0];
+            //String type, eg: 'P' + Integer.toString(i)
+            //String title = line[1];
+            //String text = (line.length > 2) ? line[2] : "";
+            //String image = (line.length > 3) ? line[3] : "";
+
+            //stm.bindString(1, line[0]);  // id. Note bindString() uses 1-based position indexes, ie. 1 here.
+            //stm.bindString(2, ); // is the page number, so corresponds to eg: iWelcome
+            //stm.bindString(3, title);
+            //stm.bindString(4, text);
+            //stm.bindString(5, image);
+            //long rowId = stm.executeInsert();
+
+        //    buffer.append("i:")
+//                    .append(c.getString(0))
+//                    .append(",")
+//                    .append(c.getString(1))
+//                    .append(",")
+//                    .append(c.getString(2))
+//                    .append("\n");
+        }
+//        msg = buffer.toString();
+//    showAlertDialog(MainActivity.this, "DB query", msg, false);
+
+    db.close();
+    db = null; // To indicate that it is closed.
+}
+
+    public boolean get_details_from_database(String line_id)
+    {
+        boolean result = false;
+        // page_num will be "C" for Contents, or "P1", "P2", etc for the other pages.
+        if (db==null) {
+            // The following is from Conetxt (as another ordeting of these arguments in database)
+            db = openOrCreateDatabase(DBNAME, Context.MODE_PRIVATE, null);
+        }
+        // for parameterised queries, can use db.query(...)
+        Cursor c = db.rawQuery("SELECT title, text, image FROM page WHERE id='?'", new String[]{line_id} );
+        //String msg;
+        if (c.getCount() != 1) {
+            showAlertDialog(MainActivity.this, "DB get_detail", "select count ("+Integer.toString(c.getCount())+") != 1 for line_id="+line_id, false);
+        //    msg = "No content records found";
+            result= false;
+        }
+        else {
+        //StringBuffer buffer = new StringBuffer();
+          c.moveToFirst();
+            //ids.add(c.getString(0)); // data[i][0][0] is the number, eg: "1.00"
+            //items.add(c.getString(1)); // data[i][0][0] is the number, eg: "1.00"
+            current_detail_title=c.getString(0);
+            current_detail_text=c.getString(1);
+            current_detail_image=c.getInt(2); // or getLong(2)
+            result = true;
+            //String id = line[0];
+            //String type, eg: 'P' + Integer.toString(i)
+            //String title = line[1];
+            //String text = (line.length > 2) ? line[2] : "";
+            //String image = (line.length > 3) ? line[3] : "";
+
+            //stm.bindString(1, line[0]);  // id. Note bindString() uses 1-based position indexes, ie. 1 here.
+            //stm.bindString(2, ); // is the page number, so corresponds to eg: iWelcome
+            //stm.bindString(3, title);
+            //stm.bindString(4, text);
+            //stm.bindString(5, image);
+            //long rowId = stm.executeInsert();
+
+            //    buffer.append("i:")
+//                    .append(c.getString(0))
+//                    .append(",")
+//                    .append(c.getString(1))
+//                    .append(",")
+//                    .append(c.getString(2))
+//                    .append("\n");
+        }
+//        msg = buffer.toString();
+//    showAlertDialog(MainActivity.this, "DB query", msg, false);
+
+        db.close();
+        db = null; // To indicate that it is closed.
+        return result;
+    }
+
+
+/*
+Can add Helper class, eg:
+    // From: http://www.techotopia.com/index.php/An_Android_Studio_SQLite_Database_Tutorial
+    public class MyDBHandler extends SQLiteOpenHelper {
+
+        private static final int DATABASE_VERSION = 1;
+        private static final String DATABASE_NAME = "productDB.db";
+        private static final String TABLE_PRODUCTS = "products";
+
+        public static final String COLUMN_ID = "_id";
+        public static final String COLUMN_PRODUCTNAME = "productname";
+        public static final String COLUMN_QUANTITY = "quantity";
+
+        public MyDBHandler(Context context, String name,
+                           SQLiteDatabase.CursorFactory factory, int version) {
+            super(context, DATABASE_NAME, factory, DATABASE_VERSION);
+        }
+
+        @Override
+        public void onCreate(SQLiteDatabase db) {
+
+        }
+
+        @Override
+        public void onUpgrade(SQLiteDatabase db, int oldVersion,
+                              int newVersion) {
+
+        }
+
+    }
+
+    Next, the onCreate() method needs to be implemented so that the products table is created when the database is first initialized. This involves constructing a SQL CREATE statement containing instructions to create a new table with the appropriate columns and then passing that through to the execSQL() method of the SQLiteDatabase object passed as an argument to onCreate():
+
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+        String CREATE_PRODUCTS_TABLE = "CREATE TABLE " +
+                TABLE_PRODUCTS + "("
+                + COLUMN_ID + " INTEGER PRIMARY KEY," + COLUMN_PRODUCTNAME
+                + " TEXT," + COLUMN_QUANTITY + " INTEGER" + ")";
+        db.execSQL(CREATE_PRODUCTS_TABLE);
+    }
+
+    The onUpgrade() method is called when the handler is invoked with a greater database version number from the one previously used. The exact steps to be performed in this instance will be application specific, so for the purposes of this example we will simply remove the old database and create a new one:
+
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion,
+                          int newVersion) {
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_PRODUCTS);
+        onCreate(db);
+    }
+
+    All that now remains to be implemented in the MyDBHandler.java handler class are the methods to add, query and remove database table entries.
+    The Add Handler Method
+
+    The method to insert database records will be named addProduct() and will take as an argument an instance of our Product data model class. A ContentValues object will be created in the body of the method and primed with key-value pairs for the data columns extracted from the Product object. Next, a reference to the database will be obtained via a call to getWritableDatabase() followed by a call to the insert() method of the returned database object. Finally, once the insertion has been performed, the database needs to be closed:
+
+    public void addProduct(Product product) {
+
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_PRODUCTNAME, product.getProductName());
+        values.put(COLUMN_QUANTITY, product.getQuantity());
+
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        db.insert(TABLE_PRODUCTS, null, values);
+        db.close();
+    }
+
+    ===
+*/
+
+@Override
+public void onBackPressed() {
+
+    if ( (iCurrent>iContents) && (listView!=null) && (listView.hasWindowFocus()) ) {
+        // To go back to Contents if currently viewing the chapters.
+        // instead of listView.hasWindowFocus() could test if dialog.isShowing() or alertDialog is showing ....but maybe menu options have effect.
+        setListView(iContents, "C", "Contents");
+//    dialog.setOnDismissListener(
+//     viewing_a_page = true;
+//    dialog.onbackPressed();
+
+// add a popView() function to maintain stact of activities;
+//   ( dialog!=null) && (dialog.isShowing()) (alertDialog.... )
+//        dialog.setOnDismissListener(
+    }
+    else {
+        super.onBackPressed(); // so closes the dialog or closes the app.
+    }
+}
+
+    // Icons: https://design.google.com/icons/
+    //** Back arrow: http://stackoverflow.com/questions/14545139/android-back-button-in-the-title-bar
+    // *** Providing Up Navigation: https://developer.android.com/training/implementing-navigation/ancestral.html
+
+    // R.drawable.abc_ic_ab_back_mtrl_am_alpha f
+    // Please note that getResources().getDrawable(...) is deprecated. You should use ContextCompat.getDrawable(context, ...) instead
+
+
+
+// **** GOOD: Toolbar v7 support: https://developer.android.com/reference/android/support/v7/widget/Toolbar.html
+
+public void set_back_button(boolean setback) {
+// From: https://developer.android.com/reference/android/support/v7/widget/Toolbar.html
+// setNavigationContentDescription (CharSequence description)
+
+//        void setNavigationIcon (Drawable icon)  or void setNavigationIcon (int resId)
+//        Set the icon to use for the toolbar's navigation button.
+//        The navigation button appears at the start of the toolbar if present. Setting an icon will make the navigation button visible.
+//        If you use a navigation icon you should also set a description for its action using setNavigationContentDescription(int). This is used for accessibility and tooltips.
+
+//        void setNavigationOnClickListener (View.OnClickListener listener)
+//        Set a listener to respond to navigation events.
+//        This listener will be called whenever the user clicks the navigation button at the start of the toolbar. An icon must be set for the navigation button to appear.
+
+// **** GOOD Info on toolbar and drawer: http://stackoverflow.com/questions/28263643/tool-bar-setnavigationonclicklistener-breaks-actionbardrawertoggle-functionality
+    if (setback) {
+        //Toolbar t = activity.getToolbar();
+        toolbar.setNavigationContentDescription("Back to main Contents menu"); // for users with poor eyesigh, that user readers.
+        toolbar.setNavigationIcon(R.drawable.   ic_arrow_back_white_48dp);  // or void setNavigationIcon (int resId)
+
+        //toggle.setToolbarNavigationClickListener(new View.OnClickListener() {
+
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // For future - a better way would be using a parent activity: https://developer.android.com/training/implementing-navigation/ancestral.html
+                onBackPressed();
+                // dialog.dismiss();  //                popBackStackToTop(mHostingActivity);
+            }
+        });
+    } else {
+        toolbar.setNavigationIcon(null);  // or void setNavigationIcon (int resId)
+        toolbar.setNavigationOnClickListener(null); // probably not needed as button not visible so not clickable
+    }
+}
+
+public void firebase_cloud_messenging()
+    {
+        // If a notification message is tapped, any data accompanying the notification
+        // message is available in the intent extras. In this sample the launcher
+        // intent is fired when the notification is tapped, so any accompanying data would
+        // be handled here. If you want a different intent fired, set the click_action
+        // field of the notification message to the desired intent. The launcher intent
+        // is used when no click_action is specified.
+        //
+        // Handle possible data accompanying notification message.
+        // [START handle_data_extras]
+        if(getIntent().getExtras() != null)
+        {
+            for (String key : getIntent().getExtras().keySet()) {
+                String value = getIntent().getExtras().getString(key);
+                Log.d(TAG, "Key: " + key + " Value: " + value);
+            }
+        }
+        // [END handle_data_extras]
+
+        //Button subscribeButton = (Button) findViewById(R.id.subscribeButton);
+        //assert subscribeButton != null;
+        //subscribeButton.setOnClickListener(new View.OnClickListener() {
+        //    @Override
+        //    public void onClick (View v){
+        // [START subscribe_topics]
+        FirebaseMessaging.getInstance().subscribeToTopic("news");
+
+        // Other topics could use include:  teens, site_team, security, etc ......
+
+        Log.d(TAG, "Subscribed to news topic");
+        // [END subscribe_topics]
+        //        }
+        //});
+
+        //Button logTokenButton = (Button) findViewById(R.id.logTokenButton);
+        //assert logTokenButton != null;
+        //logTokenButton.setOnClickListener(new View.OnClickListener() {
+        //    @Override
+        //    public void onClick (View v){
+        Log.d(TAG, "InstanceID token: " + FirebaseInstanceId.getInstance().getToken());
+        //    }
+        //});
+    }
+
+
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -783,6 +1453,12 @@ and this snippet to the activity :-
         return true; // return true so that the menu can be displayed
     }
 
+   // ActionBar actionBar = getActionBar();
+   // actionBar.setDisplayHomeAsUpEnabled(true);
+
+
+    // "Beginning in Android 4.1 (API level 16), you can declare the logical parent of each activity by specifying the android:parentActivityName attribute in the <activity> element.
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -794,10 +1470,12 @@ and this snippet to the activity :-
 
         int id = item.getItemId(); // could offset this item id to the array data index.
         // int index = -1; // index of the array
+/*
         switch(id) {
             //noinspection SimplifiableIfStatement
+            case android.R.id.home: setListView(iContents); break; // and turn off the back button.
 
-            case R.id.action_previous: if (iCurrent>0) {setListView(iCurrent-1);} break;
+            case R.id.action_previous: if (iCurrent>-1) {setListView(iCurrent-1);} break; // As -1 is the Contents page.
             case R.id.action_next:     if (iCurrent<data.length-1) {setListView(iCurrent+1);} break;
             case R.id.action_today:
                 switch(Calendar.getInstance().get(Calendar.DAY_OF_WEEK)) {
@@ -805,7 +1483,7 @@ and this snippet to the activity :-
                     case Calendar.SATURDAY: setListView(iSaturday); break;
                     case Calendar.SUNDAY:   setListView(iSunday);   break;
                     case Calendar.MONDAY:   setListView(iMonday);   break;
-                    case Calendar.TUESDAY:  setListView(iTuesday);  break;
+                    //case Calendar.TUESDAY:  setListView(iTuesday);  break;
                     default:                setListView(iWelcome);  break;
                 }
                 break;
@@ -817,8 +1495,8 @@ and this snippet to the activity :-
             case R.id.action_saturday: setListView(iSaturday); break;
             case R.id.action_sunday:   setListView(iSunday);   break;
             case R.id.action_monday:   setListView(iMonday);   break;
-            case R.id.action_tuesday:  setListView(iTuesday);  break;
             case R.id.action_whatnext: setListView(iWhatNext); break;
+            case R.id.action_inbox:    setListView(iInbox); break;
             //case R.id.action_register:
             //case R.id.action_sync:
             //case R.id.action_settings:
@@ -830,22 +1508,48 @@ and this snippet to the activity :-
                 // If don't recognise the menu item then the super class might have a handler for it:
                 return super.onOptionsItemSelected(item);
         }
+*/
         return true;
     }
 
-    private boolean setListView(int array_index){
-        if ((array_index<0) || (array_index>=data.length)) {return false;}
-        iCurrent = array_index;
-        toolbar.setTitle("SM16: " + (data[iCurrent].length>0 ? data[iCurrent][0][0] : "") );
-        items.clear();
-        //Collections.addAll(items, data[array_index]); // Collections.addAll() might be faster than items.addAll(welcome) ?
-        for (int i=1; i<data[iCurrent].length; i++) { // i starts at 1, as 0 is the title.
-            // if has detail text for the line, then add ' ...' to the line to indicate that can tap line to see detail.
-            items.add( data[iCurrent][i].length>1 ? data[iCurrent][i][0]+" ..." : data[iCurrent][i][0] );
-        }
-        // public static <T> boolean addAll(Collection<? super T> c, T... elements)
+    private boolean setListView(int array_index, String page_num, String page_title){
+        // if (array_index == iCurrent) {return true;} // as can be reloading, eg if inbox messages have arrived.
+        if ((array_index<-1) || (array_index>=data.length)) {return false;}
 
+        ids.clear(); // the line ids that correspond to the titles in the itemns list
+        items.clear(); // The items visible in the Listview
+
+        if (array_index==-1) {
+            toolbar.setTitle("SM16: Contents");
+            get_page_from_database("C", ids, items);
+            //for (int i = 0; i < data.length; i++) { // i starts at 1, as 0 is the title.
+            //    // if pages within that section/chapter, then could add ' ...' to the line to indicate that can tap line to see detail.
+            //    if ((data[i].length > 0) && (data[i][0].length > 1)) {
+            //        items.add(data[i][0][1]); // data[i][0][0] is the number, eg: "1.00"
+            //    }
+            //}
+        }
+        else {
+            // toolbar.setTitle(((lines.length > 0) && (lines[0].length > 1) ? lines[0][1] : "")); // "SM16: " +
+            toolbar.setTitle(page_title); // "SM16: " +
+            get_page_from_database("P"+page_num, ids, items); // was: "P"+Integer.toString(array_index)
+
+            //String lines[][] = data[iCurrent];
+
+            //   //Collections.addAll(items, data[array_index]); // Collections.addAll() might be faster than items.addAll(welcome) ?
+            //for (int i = 1; i < lines.length; i++) { // i starts at 1, as 0 is the title.
+            //    // if has detail text for the line, then add ' ...' to the line to indicate that can tap line to see detail.
+            //    if (lines[i].length > 1) { // as lines[i][0] is just the row number
+            //        items.add(lines[i].length > 2 ? lines[i][1] + " ..." : lines[i][1]); // lines[i][0] is the number, eg: "1.3"
+            //    }
+            //
+            //}
+        }
+        iCurrent = array_index;
+        current_page_num=page_num;
+        current_title=page_title;
         adapter.notifyDataSetChanged();
+        set_back_button(iCurrent>iContents); // To enable the back button in the toolbar
         return true;
     }
 
@@ -861,7 +1565,9 @@ and this snippet to the activity :-
         alertDialog.setButton(DialogInterface.BUTTON_NEUTRAL, "OK",  // BUTTON_POSITIVE, BUTTON_NEGATIVE, or BUTTON_NEUTRAL
               new DialogInterface.OnClickListener() {
                   public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel(); // or: dialog.dismiss();
+                      //  dialog.cancel();
+                      // or:
+                      dialog.dismiss();
               }
         });
         alertDialog.show();
@@ -883,12 +1589,47 @@ and this snippet to the activity :-
         */
     }
 
+    public boolean update_data_from_web() {
+        String stringUrl = "http://sbridgett.github.io/sm16updates/update1.txt";
+        return getDataFromURL(stringUrl); // Only returns false if cannot connect to web.
+    }
+
     public void showCustomDialog(Context context, String title, String message, int imageId) {  // add image parameter
         //final Context context = this;
 
         // custom dialog
-        final Dialog dialog = new Dialog(context);
-        dialog.setContentView(R.layout.mydialog);
+
+        // was: final Dialog dialog = new Dialog(context);
+        // now keeping a reference to dialog in the MainActivity class so can that is it is showing.
+        if (dialog==null) {
+            dialog = new Dialog(context);
+            dialog.setContentView(R.layout.mydialog);
+
+            Button okButton = (Button) dialog.findViewById(R.id.okbutton);
+            // if button is clicked, close the custom dialog
+            okButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
+
+            Button nextButton = (Button) dialog.findViewById(R.id.nextbutton);
+            // if button is clicked, close the custom dialog
+            nextButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    String stringUrl = "http://sbridgett.github.io/sm16updates/update1.txt";
+                    getDataFromURL(stringUrl);
+
+                    update_data_from_web();
+
+                }
+            });
+
+        }
+
         dialog.setTitle(title);
 
         // set the custom dialog components - text, image and button
@@ -897,6 +1638,7 @@ and this snippet to the activity :-
 
         TextView text = (TextView) dialog.findViewById(R.id.text);
         text.setText(message);
+
 
         ImageView image = (ImageView) dialog.findViewById(R.id.image);
         if (imageId == -1) {
@@ -909,28 +1651,6 @@ and this snippet to the activity :-
             // image.setImageResource(R.mipmap.ic_launcher);
             image .setVisibility(View.VISIBLE);
         }
-
-        Button okButton = (Button) dialog.findViewById(R.id.okbutton);
-        // if button is clicked, close the custom dialog
-        okButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-            }
-        });
-
-        Button nextButton = (Button) dialog.findViewById(R.id.nextbutton);
-        // if button is clicked, close the custom dialog
-        nextButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                String stringUrl = "http://google.com";
-                getDataFromURL(stringUrl);
-
-            }
-        });
-
 
     dialog.show();
     }
@@ -962,13 +1682,13 @@ public boolean appendToFile(String str) {
     //    return file;
 
     // Alternatively, you can call openFileOutput() to get a FileOutputStream that writes to a file in your internal directory. For example, here 's how to write some text to a file:
-    String filename = "myfile";
+    String datafilename = "sm16updates.txt";
     //String string = "Hello world!";
     FileOutputStream outputStream;
 
     try {
         // filename can not contain path separators:
-        outputStream = openFileOutput(filename, Context.MODE_PRIVATE | Context.MODE_APPEND); // Throws FileNotFoundException
+        outputStream = openFileOutput(datafilename, Context.MODE_PRIVATE | Context.MODE_APPEND); // Throws FileNotFoundException
         // mode 	int: Operating mode. Use 0 or MODE_PRIVATE for the default operation, MODE_APPEND to append to an existing file, MODE_WORLD_READABLE and MODE_WORLD_WRITEABLE to control permissions.
 // or: FileInputStream openFileInput (String name);  // Throws FileNotFoundException
 //  in = new BufferedInputStream(new FileInputStream(file));
