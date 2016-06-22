@@ -2,7 +2,7 @@ package uk.co.summermadness.sm16;
 
 //  If your organization has a firewall that restricts the traffic to or from the Internet, you need to configure it to allow connectivity with FCM in order for your Firebase Cloud Messaging client apps to receive messages. The ports to open are: 5228, 5229, and 5230. FCM typically only uses 5228, but it sometimes uses 5229 and 5230. FCM doesn't provide specific IPs, so you should allow your firewall to accept outgoing connections to all IP addresses contained in the IP blocks listed in Google's ASN of 15169.
 
-// Batch (push notifications) is compatible with Android 2.3 and higher. .
+// Batch (push notifications) is compatible with Android 2.3 and higher.
 
 // Batch - Advanced - Intercepting notifications: https://batch.com/doc/android/advanced/intercepting-notifications.html
 
@@ -39,10 +39,12 @@ import android.app.Application;
 import android.app.Dialog;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.sqlite.SQLiteStatement;
+import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
@@ -55,10 +57,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Gravity;
+//import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -72,12 +75,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
+//import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Calendar;
+//import java.util.Calendar;
 //import java.util.Collections;
 import java.util.List;
 //import android.support.v7.app.ActionBar; // when using the Support Library, see: https://developer.android.com/topic/libraries/support-library/setup.html
@@ -333,11 +336,13 @@ public class MainActivity extends AppCompatActivity {
 
     private Toolbar toolbar = null; // Setting to null as way of indicating app not created.
     private ListView listView = null;
-    private List<String> ids, items;
+    private List<Integer> ids=null, unreads=null, goings=null;
+    private List<String> chapters=null, items=null;
     private ArrayAdapter<String> adapter;
     private Dialog dialog = null;
     static final String DBNAME = "sm16db";
     private SQLiteDatabase db = null;
+    boolean keepdbopen = true; // To keep db open until this Activites' onDestroy()
 
     private int lastNotificationId = 0;
 
@@ -350,7 +355,7 @@ public class MainActivity extends AppCompatActivity {
     //static final String[][][] data;
     // private final static
     // Can this be modified:
-    String[][][] data = SmDataArray.data;
+    String[][] data = SmDataArray.data;
 
     // or in an XML resource file, that is imported in onCreate
     // Can only store One dimensional arrays in arrays.xml resource. Could use JSON within each element, but need to use code for any spaces within the text.
@@ -363,10 +368,11 @@ public class MainActivity extends AppCompatActivity {
 
     static final int iNone=-2, iContents=-1, iWelcome = 0, iInfo = 1, iVenues = 2, iSpeakers = 3, iFriday = 4, iSaturday = 5, iSunday = 6, iMonday = 7, iWhatNext = 8, iInbox = 9;
     int iCurrent = iNone; // iWelcome; // Start on the welcome page.
-    private String current_page_num="", current_title="", current_detail_title="", current_detail_text="";
+    private String current_chapter="", current_title="", current_detail_title="", current_detail_text="";
+    private int current_detail_position_in_array = -1, current_detail_rowid = -1, current_detail_unread = -1, current_detail_going = -1;
     int current_detail_image = -1; // or long
 
-    boolean viewing_a_page = false; // For the onBack() button so when going to a page pops back - should really use another activity for the contents view.
+    //boolean viewing_a_page = false; // For the onBack() button so when going to a page pops back - should really use another activity for the contents view.
 
 /*
     // static final String STATE_SCORE = "playerScore";
@@ -464,15 +470,18 @@ public class MainActivity extends AppCompatActivity {
         }
         super.onStop();
     }
-
+*/
     @Override
     protected void onDestroy() {
+        // https://developer.android.com/reference/android/app/Activity.html#onDestroy()
+        // "Note: do not count on this method being called as a place for saving data! For example, if an activity is editing data in a content provider, those edits should be committed in either onPause() or onSaveInstanceState(Bundle), not here. This method is usually implemented to free resources like threads that are associated with an activity, so that a destroyed activity does not leave such things around while the rest of its application is still running. There are situations where the system will simply kill the activity's hosting process without calling this method (or any others) in it, so it should not be used to do things that are intended to remain around after the process goes away. "
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.GINGERBREAD) {
-            Batch.onDestroy(this);
+    //      Batch.onDestroy(this);
         }
+        if ((db!=null) && db.isOpen()) {db.close();} // Close the database.
         super.onDestroy();
     }
-
+/*
     @Override
     protected void onNewIntent(Intent intent) {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.GINGERBREAD) {
@@ -552,6 +561,9 @@ public class MainActivity extends AppCompatActivity {
             if (!appendToFile(result)) {
                 showAlertDialog(MainActivity.this, "Append failed", "Append to file failed", false);
             }
+/*
+            *** Need to fix this code to work with the database:
+
             showAlertDialog(MainActivity.this, "HTTP result:", result, false);
             boolean update_view = false;
             if (!result.equals("FAILED")) {//  When limit is negative (egt. -1), split(regex, limit), the behaviour of removing trailing blanks from the resulting array is disabled: ".".split("\\.", -1) // returns an array of two blanks, ie ["", ""]
@@ -624,7 +636,7 @@ public class MainActivity extends AppCompatActivity {
 //                // Appropriate error handling code
 //            }
 
-
+*/
         }
     }
 
@@ -769,19 +781,24 @@ and this snippet to the activity :-
 
         // null check not really needed - but just in case...
         if (savedInstanceState == null) {
-            showAlertDialog(MainActivity.this, "State null", "State null", false);
+            //showAlertDialog(MainActivity.this, "State null", "State null", false);
             // initUi();
             //  See more at: http://www.mzan.com/article/456211-activity-restart-on-rotation-android.shtml#sthash.KbTc9Spl.dpuf
             //return;
         }
 
-        data[0][0] = new String[]{"0.0", "Changed!"};
+        //data[0][0] = new String[]{"0.0", "Changed!"};
 
 //  android:configChanges="orientation|keyboard|keyboardHidden|screenSize|screenLayout|uiMode"
 
         // NOTIFICATION NOT NEEDED AT PRESENT: showNotification("My Notify", "Starting app", 1);
+        //showAlertDialog(MainActivity.this, "add_array_to_database()", "Calling", false);
         add_array_to_database();
+
+        //showAlertDialog(MainActivity.this, "initialise_user_interface()", "Calling", false);
         initialise_user_interface(savedInstanceState);
+
+        //showAlertDialog(MainActivity.this, "firebase_cloud_messenging()", "Calling", false);
 
         //int sdk_version = android.os.Build.VERSION.SDK_INT; // NOTE: This SDK_INT is available since Donut (android 1.6 / API4), previously SDK
         if ((android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.GINGERBREAD) // As Batch needs Sdk 9 or above
@@ -806,6 +823,27 @@ and this snippet to the activity :-
         super.onResume();
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.GINGERBREAD) { // As Batch needs Sdk 9 or above
              checkPlayServices();   // Needs working version of Google play services - should check this in onCreate and onResume (ie. back button pressed from another app).
+        }
+    }
+
+
+    protected void set_current_detail_to_read()
+    {
+        if (current_detail_unread != 0) {
+            set_page_column_in_db(current_detail_rowid, "unread", 0);
+            unreads.set(current_detail_position_in_array, 0);
+            current_detail_unread = 0;
+            adapter.notifyDataSetChanged();
+        }
+    }
+
+    protected void set_current_detail_to_going(int going)
+    {
+        if (current_detail_going != going) {
+            set_page_column_in_db(current_detail_rowid, "going", going);
+            goings.set(current_detail_position_in_array, going);
+            current_detail_going = going;
+            adapter.notifyDataSetChanged();
         }
     }
 
@@ -904,10 +942,12 @@ and this snippet to the activity :-
 
         setSupportActionBar(toolbar);
 
-        // Set initial list capactity to 30 (default is 10):
-        ids = new ArrayList<String>(30); // is the ids for the items that correspond to the lines in the ListView table
+        // Set initial list capacity to 30 (default is 10):
+        ids = new ArrayList<Integer>(30); // is the ids for the items that correspond to the lines in the ListView table
+        chapters = new ArrayList<String>(30); // could optionally pass the number of elements?
         items = new ArrayList<String>(30); // could optionally pass the number of elements?
-
+        unreads = new ArrayList<Integer>(30);
+        goings = new ArrayList<Integer>(30);
         //clear the actual results
         // ids.clear();
         // items.clear();
@@ -921,7 +961,7 @@ and this snippet to the activity :-
         // then use: setViewResource(layout )
 
         // Define a new Adapter with parameters: Context, Layout for the row, ID of the TextView to which the data is written, Array of data
-        adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, android.R.id.text1, items);
+        //adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, android.R.id.text1, items);
         // simple_list_item_1
         // simple_list_item_activated_1
         // simple_expandable_list_item_1
@@ -929,9 +969,61 @@ and this snippet to the activity :-
         // Using the standard supplied layout simple_list_item1. You can create your own layouts and we will see how this is done in a moment.
         // To create own layout: http://www.i-programmer.info/programming/android/7849-android-adventures-listview-and-adapters.html?start=1
 
+        // To change the text colour programmably:
+        // From: http://stackoverflow.com/questions/4533440/android-listview-text-color
+
+        // Can specify this in several ways: https://developer.android.com/reference/android/widget/ArrayAdapter.html
+        // "By default this class expects that the provided resource id references a single TextView. If you want to use a more complex layout, use the constructors that also takes a field id. That field id should reference a TextView in the larger layout resource.
+        // However the TextView is referenced, it will be filled with the toString() of each object in the array. You can add lists or arrays of custom objects. Override the toString() method of your objects to determine what text will be displayed for the item in the list.
+        // To use something other than TextViews for the array display, for instance, ImageViews, or to have some of data besides toString() results fill the views, override getView(int, View, ViewGroup) to return the type of view you want.
+
+
+        adapter=new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, android.R.id.text1, items){
+            // Could make a custom layout for the table rows, see: http://stackoverflow.com/questions/5564789/change-listviews-textcolor
+            // or:  http://stackoverflow.com/questions/18903735/how-to-change-the-text-color-of-a-listview-item
+
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view =super.getView(position, convertView, parent);
+                // OR create layout if not given a cached one:
+                // View row = convertView;
+                //if(row==null){
+                //    LayoutInflater inflater=getLayoutInflater();
+                //    row=inflater.inflate(R.layout.row, parent, false);
+                //}
+
+                TextView textView=(TextView) view.findViewById(android.R.id.text1);
+            /*YOUR CHOICE OF COLOR*/
+                // && (position<unreads.size() ass ume is correct.
+                if (iCurrent>iContents) { // This assumes iCurrent is set BEFORE the ListView is displayed!
+                    textView.setTextColor(unreads.get(position)==0 ? Color.BLACK : Color.BLUE);
+                    view.setBackgroundColor(goings.get(position)==0 ? Color.WHITE : Color.CYAN);
+                }
+                else {
+                    textView.setTextColor(Color.BLACK);
+                    view.setBackgroundColor(Color.WHITE);
+                }
+
+// I could also set an icon if the layout has an image view, eg: http://android-er.blogspot.co.uk/2010/06/using-convertview-in-getview-to-make.html
+//                ImageView icon=(ImageView)row.findViewById(R.id.icon);
+//                if (month[position]=="December"){
+//                    icon.setImageResource(R.drawable.icon);
+//                }
+//                else{
+//                    icon.setImageResource(R.drawable.icongray);
+//                }
+
+                return view;
+            }
+        };
+        /*SET THE ADAPTER TO LISTVIEW*/
+        // setListAdapter(adapter);
+
+
+
         //data = SmDataArray.data;
 
-        if (iCurrent==iNone) {setListView(iContents, "C", "Contents");} // will initially be the iContents
+        if (iCurrent==iNone) {setListView(iContents);} // will initially be the iContents
 
         // Get ListView from XML:
         listView = (ListView) findViewById(R.id.listView);
@@ -964,10 +1056,12 @@ and this snippet to the activity :-
                 //myList.setSelection(position);
                 //where position is the zero based position of the item in the list and you can scroll to show any item using
                 // myList.smoothScrollToPosition(position);
+                Log.d("ListView", "position="+Integer.toString(position)+"chapters.size="+Integer.toString(chapters.size()));
+                //showAlertDialog(MainActivity.this, "Position", "position="+Integer.toString(position)+"chapters.size="+Integer.toString(chapters.size()), false);
 
                 if (iCurrent == iContents) {
-                    if (position >= ids.size()) {showAlertDialog(MainActivity.this, "Position out of range", "position="+Integer.toString(position)+" >= size="+Integer.toString(ids.size()), false);}
-                    setListView(position, ids.get(position), items.get(position));
+                    if (position >= chapters.size()) {showAlertDialog(MainActivity.this, "Position out of range", "position="+Integer.toString(position)+" >= size="+Integer.toString(chapters.size()), false);}
+                    setListView(position);
                     return;
                 }
                 // Show Alert:
@@ -1008,8 +1102,14 @@ and this snippet to the activity :-
 
 //                showCustomDialog(MainActivity.this, title, message, image_id);
 
+                //showAlertDialog(MainActivity.this, "Position", "position="+Integer.toString(position)+"ids.size="+Integer.toString(ids.size()), false);
+                //showAlertDialog(MainActivity.this, "get_details", "position="+Integer.toString(position)+"id=="+Integer.toString(ids.get(position)), false);
                 if (get_details_from_database(ids.get(position))) {
+                    //showAlertDialog(MainActivity.this, "got_details", "position="+Integer.toString(position)+"id=="+Integer.toString(ids.get(position)), false);
+                    current_detail_position_in_array = position; // Useful for the Next button
                     showCustomDialog(MainActivity.this, current_detail_title, current_detail_text, current_detail_image);
+                    // should maybe do the following before showing the custom dialog, in case person hit Next very quickly, so would move to next detail - but maybe that is ok.
+                    set_current_detail_to_read(); // Uses the current_detail_unread, current_detail_rowid and current_detail_position_in_array
                 }
 
 //                Toast toast = Toast.makeText(getApplicationContext(),
@@ -1036,7 +1136,9 @@ and this snippet to the activity :-
     }
 
 
+
 public void add_array_to_database() {
+    // See: https://developer.android.com/training/basics/data-storage/databases.html
     // Good info about using sqlite in Android: http://stackoverflow.com/questions/433392/how-do-i-use-prepared-statements-in-sqlite-in-android
     eg:
     //String sql = "UPDATE table_name SET column_2=? WHERE column_1=?";
@@ -1046,8 +1148,9 @@ public void add_array_to_database() {
     //statement.bindString(1, stringValue);
     //statement.bindLong(2, id);
     // int numberOfRowsAffected = statement.executeUpdateDelete();
+    //showAlertDialog(MainActivity.this, "add_array_to_database()", "Starting", false);
 
-    if (db == null) {
+    if (( db == null) || !db.isOpen()) {
         // The following is from Conetxt (as another ordeting of these arguments in database)
         db = openOrCreateDatabase(DBNAME, Context.MODE_PRIVATE, null);
         // or: db = dbHelper.getWritabledatabase();
@@ -1059,72 +1162,65 @@ public void add_array_to_database() {
 
     showAlertDialog(MainActivity.this, "DB rebuild", "SmDataArray.dataVersion="+Integer.toString(SmDataArray.dataVersion), false);
     // execSQL(..) returns void (ie. nothing), but raises exception on error:
+    db.execSQL("DROP TABLE IF EXISTS chapter;");    // just for developing
     db.execSQL("DROP TABLE IF EXISTS page;");    // just for developing
-    db.execSQL("CREATE TABLE IF NOT EXISTS page(id VARCHAR, type VARCHAR, title VARCHAR, text VARCHAR, image INT);");
+    // Sqlite databases also have a 'rowid' field for fast access - "Searching for a record with a specific rowid, or for all records with rowids within a specified range is around twice as fast as a similar search made by specifying any other PRIMARY KEY or indexed value."
+    db.execSQL("CREATE TABLE IF NOT EXISTS chapter(chapter TEXT, title TEXT, colour TEXT, unread INT);");
+    db.execSQL("CREATE TABLE IF NOT EXISTS page(page TEXT, chapter TEXT, title TEXT, detail TEXT, image INT, unread INT, going INT);");
 // *** add fields for version and viewed.
 // *** add index on type for faster search, and on primary on id.
     // editRollno.getText()
 
     try {
         db.beginTransaction();
-        String sql = "INSERT INTO page (id,type,title,text,image) VALUES(?,?,?,?,?);";
-        SQLiteStatement stm = db.compileStatement(sql);
+        SQLiteStatement sql_chapter = db.compileStatement("INSERT INTO chapter (chapter,title,colour,unread) VALUES(?,?,?,1);");
+        SQLiteStatement sql_page = db.compileStatement("INSERT INTO page (page,chapter,title,detail,image,unread,going) VALUES(?,?,?,?,?,1,0);");
         // String stm = "INSERT INTO page VALUES('" + line[0] + "','C', '" + line[1] + "','" + line[2] + "', '');"
+        String chapter = "";
         for (int i = 0; i < data.length; i++) {
-            String page_num="";
-            if (data[i].length > 0) {
-                String[] line = data[i][0];
+            String[] line = data[i];
 
-                if (line.length > 0) {
-                    Log.d("DB", "ID: " + line[0]);
-                }
-                if (line.length > 2) {
-                    // eg: {"0.0", "Welcome", "red"},
-                    page_num =line[0]; // eg: "0" for Welcome page.
-                    stm.bindString(1, page_num);  // id. Note these bindString(...) indexes are 1-based positions.
-                    stm.bindString(2, "C"); // type, where C is for type Content:
-                    stm.bindString(3, line[1]); // title
-                    stm.bindString(4, line[2]); // text
+            if (line.length < 3) {showAlertDialog(MainActivity.this, "Data incomplete", "Line id="+(line.length>1 ? line[0] : "")+" has less than three columns", false); continue;}
+            if (line.length != 4) {showAlertDialog(MainActivity.this, "Data not fully complete", "Line id="+(line.length>1 ? line[0] : "")+" has less than four columns", false);}
 
-                    long image_id = -1;
-                    if (line.length>3) {
-                        String image_id_string = line[3];
-                        try {
-                            image_id = Integer.parseInt(image_id_string);
-                        } catch (NumberFormatException nfe) {
-                            showAlertDialog(MainActivity.this, "Error", "Could not parse image_id_string to an integer:" + image_id_string, false);
-                        }
-                    }
-                    stm.bindLong(5, image_id); // image
-                    // stm.bindAllArgsAsStrings(new String[]{line[0], "C", line[1], line[2], ""}); // BUT needs API 11, I've set minTarget to 7
-                    long rowId = stm.executeInsert();
-                } else {
-                    Log.d("DB", "Line too short");
-                }
+            String page = line[0];  // eg: "1" for Welcome chapter, or "1.02" for a page in the Welcome chapter.
+            // Log.d("DB", "ID: " + line[0]);
+            // eg: {"1", "Welcome", "red"},
+            int dot_position = page.indexOf('.');
+
+            if (dot_position == -1) {
+                chapter = page;
+                sql_chapter.bindString(1, chapter);      // id. Note these bindString(...) indexes are 1-based positions.
+                sql_chapter.bindString(2, line[1]); // title
+                sql_chapter.bindString(3, line[2]); // colour
+                long rowId = sql_chapter.executeInsert();
             }
-
-            for (int j = 1; j < data[i].length; j++) {
-                String[] line = data[i][j]; // C is for type Content:
-                if (line.length == 0 || line.length == 1) {  // length=0 for the empty Inbox lines. length=1 shouldn't occur.
-                    continue;
+            else {
+                long image_id = -1;
+                if ( (line.length > 3) && !line[3].equals("") ) {
+                    String image_id_string = line[3];
+                    try {
+                        image_id = Integer.parseInt(image_id_string);
+                    } catch (NumberFormatException nfe) {
+                        showAlertDialog(MainActivity.this, "Error", "Could not parse image_id_string to an integer:" + image_id_string, false);
+                    }
                 }
-                // Log.d("DB", "ID: " + line[0]);
-                String id = line[0];
-                String title = line[1];
-                String text = (line.length > 2) ? line[2] : "";
-                String image = (line.length > 3) ? line[3] : "";
+                if (!page.substring(0, dot_position).equals(chapter)) // the second param of substring() is the end index exclusive.
+                {
+                    showAlertDialog(MainActivity.this, "DB create error", "Page: '" + page +"' starts with: '"+ page.substring(0, dot_position) +"' doesn't match chapter: '" + chapter + "' for title='" + line[1] + "'", false);
+                }
 
-                if ( ! id.substring(0,1).equals(page_num) ) {showAlertDialog(MainActivity.this, "DB create error", "line id="+id+" doesn't match page_num="+page_num+" for title="+title, false);}
-
-                stm.bindString(1, id);  // id. Note bindString() uses 1-based position indexes, ie. 1 here.
-                stm.bindString(2, 'P' + page_num); // is the page number, previously corresponded to eg: iWelcome, as was (Integer.toString(i))
-                stm.bindString(3, title);
-                stm.bindString(4, text);
-                stm.bindString(5, image);
-                long rowId = stm.executeInsert();
-//                db.execSQL("INSERT INTO page VALUES('" + line[0] + "',+"', '" + title + "','" + text + "', '" +image+ "');");
+                sql_page.bindString(1, page);      // id. Note these bindString(...) indexes are 1-based positions.
+                sql_page.bindString(2, chapter); // chapter - is foreign key to the chapter table.
+                sql_page.bindString(3, line[1]); // title
+                sql_page.bindString(4, line[2]); // detail
+                sql_page.bindLong(5, image_id);  // image
+                // stm.bindAllArgsAsStrings(new String[]{line[0], "C", line[1], line[2], ""}); // BUT needs API 11, I've set minTarget to 7
+                // db.execSQL("INSERT INTO page VALUES('" + line[0] + "',+"', '" + title + "','" + detail + "', '" +image+ "');");
+                long rowId = sql_page.executeInsert();
             }
         }
+
         db.setTransactionSuccessful();
     } catch (Exception e) {
         Log.w("Exception:", e);
@@ -1133,8 +1229,7 @@ public void add_array_to_database() {
     }
 
     db.setVersion(SmDataArray.dataVersion);
-    db.close();
-    db = null; // To indicate that it is closed.
+    if (!keepdbopen) {db.close(); db = null;} // =null to indicate that it is closed.
 
     // db.execSQL("UPDATE student SET name='" + editName.getText() + "',marks='" +
     //        editMarks.getText() + "' WHERE rollno='" + editRollno.getText() + "'");
@@ -1143,109 +1238,98 @@ public void add_array_to_database() {
     // The first parameter of this function specifies the name of the database to be opened or created.
     // The second parameter, Context.MODE_PRIVATE indicates that the database file can only be accessed by the calling application or all applications sharing the same user ID.
     // The third parameter is a Cursor factory object which can be left null if not required.
+    //showAlertDialog(MainActivity.this, "add_array_to_database()", "Finished", false);
 }
 
-    public void get_page_from_database(String page_num, List<String> ids, List<String> items)
+    public void get_contents_from_database(List<String> chapters, List<String> items)
     {
-    // page_num will be "C" for Contents, or "P1", "P2", etc for the other pages.
-    if (db==null) {
-        // The following is from Conetxt (as another ordeting of these arguments in database)
-        db = openOrCreateDatabase(DBNAME, Context.MODE_PRIVATE, null);
-    }
-    // for parameterised queries, can use db.query(...)
-    Cursor c = db.rawQuery ("SELECT id, title FROM page WHERE type='?'", new String[]{page_num});
-    //String msg;
-    //if (c.getCount() == 0) {
-    //    msg = "No content records found";
-    //}
-    //else {
-        //StringBuffer buffer = new StringBuffer();
-        while (c.moveToNext()) {
-            ids.add(c.getString(0)); // data[i][0][0] is the number, eg: "1.00"
-            items.add(c.getString(1)); // data[i][0][0] is the number, eg: "1.00"
-            //String id = line[0];
-            //String type, eg: 'P' + Integer.toString(i)
-            //String title = line[1];
-            //String text = (line.length > 2) ? line[2] : "";
-            //String image = (line.length > 3) ? line[3] : "";
-
-            //stm.bindString(1, line[0]);  // id. Note bindString() uses 1-based position indexes, ie. 1 here.
-            //stm.bindString(2, ); // is the page number, so corresponds to eg: iWelcome
-            //stm.bindString(3, title);
-            //stm.bindString(4, text);
-            //stm.bindString(5, image);
-            //long rowId = stm.executeInsert();
-
-        //    buffer.append("i:")
-//                    .append(c.getString(0))
-//                    .append(",")
-//                    .append(c.getString(1))
-//                    .append(",")
-//                    .append(c.getString(2))
-//                    .append("\n");
-        }
-//        msg = buffer.toString();
-//    showAlertDialog(MainActivity.this, "DB query", msg, false);
-
-    db.close();
-    db = null; // To indicate that it is closed.
-}
-
-    public boolean get_details_from_database(String line_id)
-    {
-        boolean result = false;
-        // page_num will be "C" for Contents, or "P1", "P2", etc for the other pages.
-        if (db==null) {
-            // The following is from Conetxt (as another ordeting of these arguments in database)
+        if ((db==null) || !db.isOpen()) {
+            // The following is from Context (as another ordering of these arguments in class Database)
             db = openOrCreateDatabase(DBNAME, Context.MODE_PRIVATE, null);
         }
-        // for parameterised queries, can use db.query(...)
-        Cursor c = db.rawQuery("SELECT title, text, image FROM page WHERE id='?'", new String[]{line_id} );
-        //String msg;
-        if (c.getCount() != 1) {
-            showAlertDialog(MainActivity.this, "DB get_detail", "select count ("+Integer.toString(c.getCount())+") != 1 for line_id="+line_id, false);
-        //    msg = "No content records found";
-            result= false;
+        // NOTE: The rawQuery() SQL string must NOT be terminated with a semicolon:
+        Cursor c = db.rawQuery("SELECT chapter, title FROM chapter ORDER BY chapter", null);
+        if (c.moveToFirst()) do {
+            chapters.add(c.getString(0)); // chapter, eg: "1" for Welcome
+            items.add(c.getString(1));    // title, eg: "Welcome"
+        } while (c.moveToNext());
+        c.close(); // close the cursor.
+        if (!keepdbopen) {db.close(); db = null;} // =null to indicate that it is closed.
+    }
+
+
+    public void get_chapter_from_database(String chapter, List<Integer> ids, List<String> items, List<Integer> unreads, List<Integer> goings)
+    {
+        //showAlertDialog(MainActivity.this, "get_chapter_from_database()", "chapter="+chapter, false);
+        // chapter will "1", "2", etc for the chapters.
+        if ((db==null) || !db.isOpen()) {
+        // The following is from Context (as another ordering of these arguments in class Database)
+        db = openOrCreateDatabase(DBNAME, Context.MODE_PRIVATE, null);
         }
-        else {
-        //StringBuffer buffer = new StringBuffer();
-          c.moveToFirst();
-            //ids.add(c.getString(0)); // data[i][0][0] is the number, eg: "1.00"
-            //items.add(c.getString(1)); // data[i][0][0] is the number, eg: "1.00"
+
+        // for parameterised queries, can use db.query(...)
+        // Using the faster rowid here:
+        // NOTE: The rawQuery() SQL string must NOT be terminated with a semicolon:
+        Cursor c = db.rawQuery("SELECT rowid, title, unread, going FROM page WHERE chapter=? ORDER BY page", new String[]{chapter});
+        if (c.moveToFirst()) do {
+            ids.add(c.getInt(0)); // data[i][0][0] is the number, eg: "1.00"
+            items.add(c.getString(1)); // data[i][0][0] is the number, eg: "1.00"
+            unreads.add(c.getInt(2)); // if page is unread so far.
+            goings.add(c.getInt(3));
+        } while (c.moveToNext()); // returns false when past end of data
+
+        //showAlertDialog(MainActivity.this, "got_chapter_from_database()", "chapter="+chapter, false);
+        c.close();
+        if (!keepdbopen) {db.close(); db = null;} // =null to indicate that it is closed.
+    }
+
+    public boolean get_details_from_database(int rowid)
+    {
+        boolean result;
+        if ((db==null) || !db.isOpen()) {
+            // The following is from Context (as another ordering of these arguments in Database)
+            db = openOrCreateDatabase(DBNAME, Context.MODE_PRIVATE, null);
+        }
+        //showAlertDialog(MainActivity.this, "get_details_from_database()", "rowid="+Integer.toString(rowid), false);
+        // for parameterised queries, can use db.query(...) Quotes around the ? aren't needed:
+        Cursor c = db.rawQuery("SELECT title, detail, image, unread, going FROM page WHERE rowid="+Integer.toString(rowid), null );
+
+        if ( c.moveToFirst() && (c.getCount() == 1) ) { // Should never be more than 1 as using rowid. If row was deleted in background sync then would be missing this page.
+            current_detail_rowid=rowid;
             current_detail_title=c.getString(0);
             current_detail_text=c.getString(1);
             current_detail_image=c.getInt(2); // or getLong(2)
+            current_detail_unread=c.getInt(3); // or getLong(3)
+            current_detail_going=c.getInt(4); // or getLong(4)
+            //showAlertDialog(MainActivity.this, "got_details_from_database()", "rowid="+Integer.toString(rowid)+" current_detail_title="+current_detail_title, false);
             result = true;
-            //String id = line[0];
-            //String type, eg: 'P' + Integer.toString(i)
-            //String title = line[1];
-            //String text = (line.length > 2) ? line[2] : "";
-            //String image = (line.length > 3) ? line[3] : "";
-
-            //stm.bindString(1, line[0]);  // id. Note bindString() uses 1-based position indexes, ie. 1 here.
-            //stm.bindString(2, ); // is the page number, so corresponds to eg: iWelcome
-            //stm.bindString(3, title);
-            //stm.bindString(4, text);
-            //stm.bindString(5, image);
-            //long rowId = stm.executeInsert();
-
-            //    buffer.append("i:")
-//                    .append(c.getString(0))
-//                    .append(",")
-//                    .append(c.getString(1))
-//                    .append(",")
-//                    .append(c.getString(2))
-//                    .append("\n");
         }
-//        msg = buffer.toString();
-//    showAlertDialog(MainActivity.this, "DB query", msg, false);
-
-        db.close();
-        db = null; // To indicate that it is closed.
+        else {
+            showAlertDialog(MainActivity.this, "DB get_detail", "select count (="+Integer.toString(c.getCount())+") != 1 for rowid="+Integer.toString(rowid), false);
+            result= false;
+        }
+        c.close();
+        if (!keepdbopen) {db.close(); db = null;} // =null to indicate that it is closed.
         return result;
     }
 
 
+    public boolean set_page_column_in_db(int rowid, String column, int newValue)
+    {
+        if ((db==null) || !db.isOpen()) {
+            // The following is from Context (as another ordering of these arguments in class Database)
+            db = openOrCreateDatabase(DBNAME, Context.MODE_PRIVATE, null);
+        }
+        ContentValues values = new ContentValues();
+        values.put(column,newValue);
+        // I'm assumming autocommit, otherwise need to wrap this update inside a transaction:
+        int num_updated = db.update("page", values, "rowid=" + Integer.toString(rowid), null); // Tried "_id=" instead of "rowid=", but crashed with message: android.database.sqlite.SQLiteException: no such column: _id (code 1): , while compiling: UPDATE page SET unread=? WHERE _id=40
+
+        if (num_updated!=1) {showAlertDialog(MainActivity.this, "set_page_column_in_db("+column+", "+Integer.toString(rowid)+")", "num_updated (="+Integer.toString(num_updated)+") != 1", false);}
+
+        if (!keepdbopen) {db.close(); db = null;} // =null to indicate that it is closed.
+        return (num_updated==1);
+    }
 /*
 Can add Helper class, eg:
     // From: http://www.techotopia.com/index.php/An_Android_Studio_SQLite_Database_Tutorial
@@ -1311,6 +1395,7 @@ Can add Helper class, eg:
         SQLiteDatabase db = this.getWritableDatabase();
 
         db.insert(TABLE_PRODUCTS, null, values);
+
         db.close();
     }
 
@@ -1323,7 +1408,7 @@ public void onBackPressed() {
     if ( (iCurrent>iContents) && (listView!=null) && (listView.hasWindowFocus()) ) {
         // To go back to Contents if currently viewing the chapters.
         // instead of listView.hasWindowFocus() could test if dialog.isShowing() or alertDialog is showing ....but maybe menu options have effect.
-        setListView(iContents, "C", "Contents");
+        setListView(iContents);
 //    dialog.setOnDismissListener(
 //     viewing_a_page = true;
 //    dialog.onbackPressed();
@@ -1512,16 +1597,21 @@ public void firebase_cloud_messenging()
         return true;
     }
 
-    private boolean setListView(int array_index, String page_num, String page_title){
+    private boolean setListView(int array_index) { // }, int chapter, String page_title){
         // if (array_index == iCurrent) {return true;} // as can be reloading, eg if inbox messages have arrived.
-        if ((array_index<-1) || (array_index>=data.length)) {return false;}
+        //showAlertDialog(MainActivity.this, "setListView()", "array_index="+Integer.toString(array_index), false);
 
-        ids.clear(); // the line ids that correspond to the titles in the itemns list
-        items.clear(); // The items visible in the Listview
+        if (array_index<-1) {return false;}
+        if ( (array_index!=-1) && ((chapters==null) || (array_index>=chapters.size()))) {return false;}
+
+        //showAlertDialog(MainActivity.this, "setListView() 2", "array_index="+Integer.toString(array_index), false);
 
         if (array_index==-1) {
-            toolbar.setTitle("SM16: Contents");
-            get_page_from_database("C", ids, items);
+            current_chapter = "-1"; // or 0 or "C"
+            current_title="SM16: Contents";
+            chapters.clear();
+            items.clear(); // The items visible in the Listview
+            get_contents_from_database(chapters, items); // chapter -1 is the chapter table
             //for (int i = 0; i < data.length; i++) { // i starts at 1, as 0 is the title.
             //    // if pages within that section/chapter, then could add ' ...' to the line to indicate that can tap line to see detail.
             //    if ((data[i].length > 0) && (data[i][0].length > 1)) {
@@ -1531,9 +1621,15 @@ public void firebase_cloud_messenging()
         }
         else {
             // toolbar.setTitle(((lines.length > 0) && (lines[0].length > 1) ? lines[0][1] : "")); // "SM16: " +
-            toolbar.setTitle(page_title); // "SM16: " +
-            get_page_from_database("P"+page_num, ids, items); // was: "P"+Integer.toString(array_index)
-
+            current_chapter = chapters.get(array_index); // is position);
+            current_title = items.get(array_index);
+            //showAlertDialog(MainActivity.this, "setListView() 3", "array_index="+Integer.toString(array_index)+" current_chapter="+current_chapter+" current_title="+current_title, false);
+            ids.clear(); // the line ids that correspond to the titles in the itemns list
+            items.clear();
+            unreads.clear();
+            goings.clear();
+            get_chapter_from_database(current_chapter, ids, items, unreads, goings); // was: "P"+Integer.toString(array_index)
+            //showAlertDialog(MainActivity.this, "setListView() 4", "ids="+Integer.toString(ids.size())+" items="+Integer.toString(items.size()), false);
             //String lines[][] = data[iCurrent];
 
             //   //Collections.addAll(items, data[array_index]); // Collections.addAll() might be faster than items.addAll(welcome) ?
@@ -1545,9 +1641,9 @@ public void firebase_cloud_messenging()
             //
             //}
         }
-        iCurrent = array_index;
-        current_page_num=page_num;
-        current_title=page_title;
+
+        iCurrent = array_index; // This iCurrent needs set before ListView is drawn (before adapter.notifyDataSetChanged()) as is used by ArrayAdapter's getView
+        toolbar.setTitle(current_title); // "SM16: " +
         adapter.notifyDataSetChanged();
         set_back_button(iCurrent>iContents); // To enable the back button in the toolbar
         return true;
@@ -1594,6 +1690,37 @@ public void firebase_cloud_messenging()
         return getDataFromURL(stringUrl); // Only returns false if cannot connect to web.
     }
 
+
+    protected void set_custom_dialog_contents(Dialog dialog, String title, String message, int imageId) {
+        // Could disable the Next button:
+        Button nextButton = (Button) dialog.findViewById(R.id.nextbutton);
+        nextButton.setEnabled(current_detail_position_in_array+1 < ids.size());
+
+        Button goButton = (Button) dialog.findViewById(R.id.gobutton);
+        goButton.setText(current_detail_going==0 ? " Mark " : "UnMark");
+
+        dialog.setTitle(title);
+
+        // set the custom dialog components - text, image and button
+        //TextView titletext = (TextView) dialog.findViewById(R.id.title);
+        //titletext.setText(title);
+
+        TextView text = (TextView) dialog.findViewById(R.id.text);
+        text.setText(message);
+
+        ImageView image = (ImageView) dialog.findViewById(R.id.image);
+        if (imageId == -1) {
+            // GONE removes the space, whereas Invisible keeps the empty space.
+            image.setVisibility(View.GONE); // or: image .setVisibility(View.INVISIBLE);
+        } else {
+            image.setImageResource(imageId);  // for other image
+            // image.setImageResource(R.drawable.rachel_hughes_130);  // for other image
+            // image.setImageResource(R.mipmap.ic_launcher);
+            image.setVisibility(View.VISIBLE);
+        }
+    }
+
+
     public void showCustomDialog(Context context, String title, String message, int imageId) {  // add image parameter
         //final Context context = this;
 
@@ -1605,6 +1732,9 @@ public void firebase_cloud_messenging()
             dialog = new Dialog(context);
             dialog.setContentView(R.layout.mydialog);
 
+            TextView titleText = (TextView) dialog.findViewById(android.R.id.title);
+            titleText.setSingleLine(false); // To enable multi-line title.
+
             Button okButton = (Button) dialog.findViewById(R.id.okbutton);
             // if button is clicked, close the custom dialog
             okButton.setOnClickListener(new View.OnClickListener() {
@@ -1615,44 +1745,47 @@ public void firebase_cloud_messenging()
             });
 
             Button nextButton = (Button) dialog.findViewById(R.id.nextbutton);
-            // if button is clicked, close the custom dialog
+            // if button is clicked, show next in list:
             nextButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-
-                    String stringUrl = "http://sbridgett.github.io/sm16updates/update1.txt";
-                    getDataFromURL(stringUrl);
-
-                    update_data_from_web();
-
+                    if (current_detail_position_in_array+1 < ids.size())
+                    {
+                        if ( get_details_from_database(ids.get(current_detail_position_in_array+1)) ) {
+                            current_detail_position_in_array++;
+                            set_current_detail_to_read(); // Uses the current_detail_unread, current_detail_rowid and current_detail_position_in_array
+                            set_custom_dialog_contents(dialog, current_detail_title, current_detail_text, current_detail_image);
+                        }
+                    }
                 }
             });
 
+/*
+                    String stringUrl = "http://sbridgett.github.io/sm16updates/update1.txt";
+                    getDataFromURL(stringUrl);
+                    update_data_from_web();
+*/
+
         }
 
-        dialog.setTitle(title);
+        Button goButton = (Button) dialog.findViewById(R.id.gobutton);
+        // if button is clicked, close the custom dialog
+        goButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Button goButt = (Button) dialog.findViewById(R.id.gobutton);  // as complains if use goButton below:
+                if (current_detail_going == 0) {
+                    set_current_detail_to_going(1);
+                    goButt.setText("UnMark");
+                } else {
+                    set_current_detail_to_going(0);
+                    goButt.setText(" Mark ");
+                }
+            }
+        });
 
-        // set the custom dialog components - text, image and button
-        //TextView text = (TextView) dialog.findViewById(R.id.title);
-        //text.setText(title);
-
-        TextView text = (TextView) dialog.findViewById(R.id.text);
-        text.setText(message);
-
-
-        ImageView image = (ImageView) dialog.findViewById(R.id.image);
-        if (imageId == -1) {
-            // GONE removes the space, whereas Invisible keeps the empty space.
-            image .setVisibility(View.GONE); // or: image .setVisibility(View.INVISIBLE);
-        }
-        else {
-            image.setImageResource(imageId);  // for other image
-            // image.setImageResource(R.drawable.rachel_hughes_130);  // for other image
-            // image.setImageResource(R.mipmap.ic_launcher);
-            image .setVisibility(View.VISIBLE);
-        }
-
-    dialog.show();
+        set_custom_dialog_contents(dialog, title, message, imageId);
+        dialog.show();
     }
 
 

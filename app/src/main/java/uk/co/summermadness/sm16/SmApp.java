@@ -2,9 +2,9 @@ package uk.co.summermadness.sm16;
 
 import android.app.Application;
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
-import android.util.Log;
-import android.widget.Toast;
+//import android.preference.PreferenceManager;
+//import android.util.Log;
+//import android.widget.Toast;
 
 // For Batch messenging:
 //import com.batch.android.Batch;
