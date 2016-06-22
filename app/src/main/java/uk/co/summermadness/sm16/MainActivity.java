@@ -1151,30 +1151,28 @@ public void add_array_to_database() {
     //showAlertDialog(MainActivity.this, "add_array_to_database()", "Starting", false);
 
     if (( db == null) || !db.isOpen()) {
-        // The following is from Conetxt (as another ordeting of these arguments in database)
+        // The following is from Context (as another ordering of these arguments in class Database)
         db = openOrCreateDatabase(DBNAME, Context.MODE_PRIVATE, null);
         // or: db = dbHelper.getWritabledatabase();
     }
+    int dataVersion = SmDataArray.dataVersion;
+    if (db.getVersion() == dataVersion) {return;}
 
-    showAlertDialog(MainActivity.this, "DB Version", "dbVersion="+Integer.toString(db.getVersion()), false);
-
-    if (db.getVersion() == SmDataArray.dataVersion) {return;}
-
-    showAlertDialog(MainActivity.this, "DB rebuild", "SmDataArray.dataVersion="+Integer.toString(SmDataArray.dataVersion), false);
+    showAlertDialog(MainActivity.this, "Recreating database", "Current db.getVersion()="+Integer.toString(db.getVersion())+", but SmDataArray.dataVersion="+Integer.toString(dataVersion), false);
     // execSQL(..) returns void (ie. nothing), but raises exception on error:
     db.execSQL("DROP TABLE IF EXISTS chapter;");    // just for developing
     db.execSQL("DROP TABLE IF EXISTS page;");    // just for developing
     // Sqlite databases also have a 'rowid' field for fast access - "Searching for a record with a specific rowid, or for all records with rowids within a specified range is around twice as fast as a similar search made by specifying any other PRIMARY KEY or indexed value."
-    db.execSQL("CREATE TABLE IF NOT EXISTS chapter(chapter TEXT, title TEXT, colour TEXT, unread INT);");
-    db.execSQL("CREATE TABLE IF NOT EXISTS page(page TEXT, chapter TEXT, title TEXT, detail TEXT, image INT, unread INT, going INT);");
+    db.execSQL("CREATE TABLE IF NOT EXISTS chapter(chapter TEXT, version INT, title TEXT, colour TEXT, unread INT);");
+    db.execSQL("CREATE TABLE IF NOT EXISTS page(page TEXT, version INT, chapter TEXT, title TEXT, detail TEXT, image INT, unread INT, going INT);");
 // *** add fields for version and viewed.
 // *** add index on type for faster search, and on primary on id.
     // editRollno.getText()
 
     try {
         db.beginTransaction();
-        SQLiteStatement sql_chapter = db.compileStatement("INSERT INTO chapter (chapter,title,colour,unread) VALUES(?,?,?,1);");
-        SQLiteStatement sql_page = db.compileStatement("INSERT INTO page (page,chapter,title,detail,image,unread,going) VALUES(?,?,?,?,?,1,0);");
+        SQLiteStatement sql_chapter = db.compileStatement("INSERT INTO chapter (chapter,version,title,colour,unread) VALUES(?,?,?,?,1);");
+        SQLiteStatement sql_page = db.compileStatement("INSERT INTO page (page,version,chapter,title,detail,image,unread,going) VALUES(?,?,?,?,?,?,1,0);");
         // String stm = "INSERT INTO page VALUES('" + line[0] + "','C', '" + line[1] + "','" + line[2] + "', '');"
         String chapter = "";
         for (int i = 0; i < data.length; i++) {
@@ -1190,9 +1188,10 @@ public void add_array_to_database() {
 
             if (dot_position == -1) {
                 chapter = page;
-                sql_chapter.bindString(1, chapter);      // id. Note these bindString(...) indexes are 1-based positions.
-                sql_chapter.bindString(2, line[1]); // title
-                sql_chapter.bindString(3, line[2]); // colour
+                sql_chapter.bindString(1, chapter);   // id. Note these bindString(...) indexes are 1-based positions.
+                sql_chapter.bindLong(2, dataVersion); // version of the data to enable updates to this record later.
+                sql_chapter.bindString(3, line[1]);  // title
+                sql_chapter.bindString(4, line[2]);  // colour
                 long rowId = sql_chapter.executeInsert();
             }
             else {
@@ -1211,10 +1210,11 @@ public void add_array_to_database() {
                 }
 
                 sql_page.bindString(1, page);      // id. Note these bindString(...) indexes are 1-based positions.
-                sql_page.bindString(2, chapter); // chapter - is foreign key to the chapter table.
-                sql_page.bindString(3, line[1]); // title
-                sql_page.bindString(4, line[2]); // detail
-                sql_page.bindLong(5, image_id);  // image
+                sql_page.bindLong(2, dataVersion); // version of the data to enable updates to this record later.
+                sql_page.bindString(3, chapter);   // chapter - is foreign key to the chapter table.
+                sql_page.bindString(4, line[1]);   // title
+                sql_page.bindString(5, line[2]);   // detail
+                sql_page.bindLong(6, image_id);    // image
                 // stm.bindAllArgsAsStrings(new String[]{line[0], "C", line[1], line[2], ""}); // BUT needs API 11, I've set minTarget to 7
                 // db.execSQL("INSERT INTO page VALUES('" + line[0] + "',+"', '" + title + "','" + detail + "', '" +image+ "');");
                 long rowId = sql_page.executeInsert();
@@ -1240,6 +1240,33 @@ public void add_array_to_database() {
     // The third parameter is a Cursor factory object which can be left null if not required.
     //showAlertDialog(MainActivity.this, "add_array_to_database()", "Finished", false);
 }
+
+
+
+    protected void add_notification_to_inbox(String title, String detail)
+    {
+        // In case the first notification processing occurs before the database is created:
+        add_array_to_database();
+        if (( db == null) || !db.isOpen()) {
+            // The following is from Context (as another ordering of these arguments in class Database)
+            db = openOrCreateDatabase(DBNAME, Context.MODE_PRIVATE, null);
+            // or: db = dbHelper.getWritabledatabase();
+        }
+        // Maybe wrap in a transaction, but just autocommit for now.
+        // In future set message page, eg: 3.02, etc and version.
+        SQLiteStatement sql_page = db.compileStatement("INSERT INTO page (page,version,chapter,title,detail,image,unread,going) VALUES(?,?,?,?,?,?,1,0);");
+        sql_page.bindString(1, SmDataArray.inboxChapter);   // + subpage id, eg: 3.02   // id. Note these bindString(...) indexes are 1-based positions.
+        sql_page.bindLong(2, 1); // version of the data to enable updates to this record later.
+        sql_page.bindString(3, SmDataArray.inboxChapter);   // chapter - is foreign key to the chapter table.
+        sql_page.bindString(4, title);    // title
+        sql_page.bindString(5, detail);   // detail
+        sql_page.bindLong(6, -1);         // image
+        // stm.bindAllArgsAsStrings(new String[]{line[0], "C", line[1], line[2], ""}); // BUT needs API 11, I've set minTarget to 7
+        // db.execSQL("INSERT INTO page VALUES('" + line[0] + "',+"', '" + title + "','" + detail + "', '" +image+ "');");
+        long rowId = sql_page.executeInsert();
+
+    }
+
 
     public void get_contents_from_database(List<String> chapters, List<String> items)
     {
@@ -1484,6 +1511,8 @@ public void firebase_cloud_messenging()
             for (String key : getIntent().getExtras().keySet()) {
                 String value = getIntent().getExtras().getString(key);
                 Log.d(TAG, "Key: " + key + " Value: " + value);
+                // In future could add message id and version info, so can replace previous messages.
+                add_notification_to_inbox(key,value);
             }
         }
         // [END handle_data_extras]
@@ -1494,11 +1523,18 @@ public void firebase_cloud_messenging()
         //    @Override
         //    public void onClick (View v){
         // [START subscribe_topics]
-        FirebaseMessaging.getInstance().subscribeToTopic("news");
+
+        // "Developers can choose any topic name that matches the regular expression: "/topics/[a-zA-Z0-9-_.~%]+" or "[a-zA-Z0-9-_.~%]{1,900}".
+
+        // *** Good info here on how to send notifications from your own app server: https://firebase.google.com/docs/cloud-messaging/topic-messaging#sending_topic_messages_from_the_serverv
+        FirebaseMessaging.getInstance().subscribeToTopic("all");
+        // FirebaseMessaging.getInstance().subscribeToTopic("news");
+
+        // To unsubscribe, the client app calls Firebase Cloud Messaging unsubscribeFromTopic() with the topic name.
 
         // Other topics could use include:  teens, site_team, security, etc ......
 
-        Log.d(TAG, "Subscribed to news topic");
+        Log.d(TAG, "Subscribed to topic 'all'");
         // [END subscribe_topics]
         //        }
         //});
@@ -1719,11 +1755,34 @@ public void firebase_cloud_messenging()
             image.setVisibility(View.VISIBLE);
         }
     }
+/*
+===========================
+    <TextView
+    android:id="@+id/mydialogtitle"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:textColor="@color/white"
+    android:background="@color/black"
+    android:textSize="20sp" />
 
+    and add:
+
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+    dialog.setContentView(R.layout.mydialog);
+    TextView dialogTitle = (TextView) dialog.findViewById(R.id.mydialogtitle);
+    dialogTitle.setText("My dialog title");
+==================
+// or popup window: http://virenandroid.blogspot.co.uk/2011/11/custom-popupwindow-android.html
+
+
+//  This is better:  http://stackoverflow.com/questions/14439538/how-can-i-change-the-color-of-alertdialog-title-and-the-color-of-the-line-under
+// or: http://stackoverflow.com/questions/820398/android-change-custom-title-view-at-run-time
+// http://stackoverflow.com/questions/23006031/how-to-change-dialog-title-font-size
+*/
 
     public void showCustomDialog(Context context, String title, String message, int imageId) {  // add image parameter
         //final Context context = this;
-
+// Setting dialog title: http://stackoverflow.com/questions/9107054/android-alert-dialog-multi-line-title
         // custom dialog
 
         // was: final Dialog dialog = new Dialog(context);
@@ -1892,3 +1951,5 @@ public boolean appendToFile(String str) {
     }
 
 }
+
+
