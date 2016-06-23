@@ -16,7 +16,8 @@ public final class SmDataArray {
     // int resourceId = this.getResources().getIdentifier("nameOfResource", "id", this.getPackageName
 
     public static final int dataVersion = 1;
-    public static final String inboxChapter = "3";  // This inboxPage value is used for adding the notifications in MainActivity.add_notification_to_inbox(..)
+    public static final String inboxChapter = "3", inboxTitle = "Inbox";  // This inboxPage value is used for adding the notifications in MainActivity.add_notification_to_inbox(..)
+
     public static final String[][] data = new String[][]{
     // Use ’ rather than ' as SQL statements use ' for quotes, although all are prepared statements so will escape '
             // 1: Welcome:
@@ -101,7 +102,7 @@ public final class SmDataArray {
 
 
             // 3. Inbox: // Should really convert to an new ArrayList<String[]>() so can extend it
-            {inboxChapter, "Inbox",   "red", ""},
+            {inboxChapter, inboxTitle,   "red", ""},
             {inboxChapter+".01", "Your notifications inbox",   "Updates or changes to the Summer Madness programme will appear below.", ""},
 
 

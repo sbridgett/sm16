@@ -1,5 +1,9 @@
 package uk.co.summermadness.sm16;
 
+// ** It can take a couple of hours (even a day) for  a new topic to appear in Firebase notification console:
+// http://stackoverflow.com/questions/37367292/how-to-create-topic-in-fcm-notifications
+
+
 //  If your organization has a firewall that restricts the traffic to or from the Internet, you need to configure it to allow connectivity with FCM in order for your Firebase Cloud Messaging client apps to receive messages. The ports to open are: 5228, 5229, and 5230. FCM typically only uses 5228, but it sometimes uses 5229 and 5230. FCM doesn't provide specific IPs, so you should allow your firewall to accept outgoing connections to all IP addresses contained in the IP blocks listed in Google's ASN of 15169.
 
 // Batch (push notifications) is compatible with Android 2.3 and higher.
@@ -45,6 +49,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.sqlite.SQLiteStatement;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
@@ -97,6 +102,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 
 // For Firebase cloud messenging (has replaced Google cloud messenging)
+import com.google.firebase.crash.FirebaseCrash;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.FirebaseMessaging;
 
@@ -340,7 +346,8 @@ public class MainActivity extends AppCompatActivity {
     private List<String> chapters=null, items=null;
     private ArrayAdapter<String> adapter;
     private Dialog dialog = null;
-    static final String DBNAME = "sm16db";
+    private static final String DBNAME = "sm16db";
+    private static final String contentsTitlePrefix = "SM16v1";
     private SQLiteDatabase db = null;
     boolean keepdbopen = true; // To keep db open until this Activites' onDestroy()
 
@@ -365,12 +372,14 @@ public class MainActivity extends AppCompatActivity {
     // which Creates a new ArrayAdapter from external resources. The content of the array is obtained through getTextArray(int).
     // See: https://developer.android.com/reference/android/widget/ArrayAdapter.html
 
+    public static final int contents_bg_colour = Color.rgb(230, 240, 255); // for a light blue. or: Color.parseColor("#FFFFC0"), or for transparency: Color.argb(0,255,255,200)
 
     static final int iNone=-2, iContents=-1, iWelcome = 0, iInfo = 1, iVenues = 2, iSpeakers = 3, iFriday = 4, iSaturday = 5, iSunday = 6, iMonday = 7, iWhatNext = 8, iInbox = 9;
     int iCurrent = iNone; // iWelcome; // Start on the welcome page.
-    private String current_chapter="", current_title="", current_detail_title="", current_detail_text="";
+    private String current_chapter="", current_chapter_title="", current_detail_title="", current_detail_text="";
     private int current_detail_position_in_array = -1, current_detail_rowid = -1, current_detail_unread = -1, current_detail_going = -1;
     int current_detail_image = -1; // or long
+
 
     //boolean viewing_a_page = false; // For the onBack() button so when going to a page pops back - should really use another activity for the contents view.
 
@@ -619,7 +628,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 if (update_view) {
-                    setListView(iCurrent, current_page_num, current_title);
+                    setListView(iCurrent, current_page_num, current_chapter_title);
                 } // as the lines have changed or mail lines added so can't just do:  adapter.notifyDataSetChanged();
             }
 
@@ -801,10 +810,15 @@ and this snippet to the activity :-
         //showAlertDialog(MainActivity.this, "firebase_cloud_messenging()", "Calling", false);
 
         //int sdk_version = android.os.Build.VERSION.SDK_INT; // NOTE: This SDK_INT is available since Donut (android 1.6 / API4), previously SDK
-        if ((android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.GINGERBREAD) // As Batch needs Sdk 9 or above
-                && checkPlayServices()) {   // Needs working version of Google play services.
-            //try {
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.GINGERBREAD) { // As Batch needs Sdk 9 or above
+            Log.d("MyFirebase", "OS >= gingerbread="+Integer.toString(android.os.Build.VERSION.SDK_INT));
+             if (checkPlayServices()) {   // Needs working version of Google play services.
+                //try {
+                Log.d("MyFirebase", "Calling firebase_cloud_messenging()");
                 firebase_cloud_messenging();
+                Log.d("MyFirebase", "After calling firebase_cloud_messenging()");
+            }
             //    Batch.onStart(this);
             //} catch (Exception e) {
             //    Toast.makeText(getApplicationContext(), "On batch start() please udpate your google play service", Toast.LENGTH_SHORT).show();
@@ -829,22 +843,21 @@ and this snippet to the activity :-
 
     protected void set_current_detail_to_read()
     {
-        if (current_detail_unread != 0) {
-            set_page_column_in_db(current_detail_rowid, "unread", 0);
-            unreads.set(current_detail_position_in_array, 0);
-            current_detail_unread = 0;
-            adapter.notifyDataSetChanged();
-        }
+        if (current_detail_unread == 0) {return;}
+        set_page_column_in_db(current_detail_rowid, "unread", 0);
+        if (current_chapter_title.equals(SmDataArray.inboxTitle)) {reduce_chapter_unread_column_in_db(SmDataArray.inboxChapter);}
+        unreads.set(current_detail_position_in_array, 0);
+        current_detail_unread = 0;
+        adapter.notifyDataSetChanged();
     }
 
     protected void set_current_detail_to_going(int going)
     {
-        if (current_detail_going != going) {
-            set_page_column_in_db(current_detail_rowid, "going", going);
-            goings.set(current_detail_position_in_array, going);
-            current_detail_going = going;
-            adapter.notifyDataSetChanged();
-        }
+        if (current_detail_going == going) {return;}
+        set_page_column_in_db(current_detail_rowid, "going", going);
+        goings.set(current_detail_position_in_array, going);
+        current_detail_going = going;
+        adapter.notifyDataSetChanged();
     }
 
 
@@ -937,7 +950,7 @@ and this snippet to the activity :-
             return;
         }
 
-        toolbar.setTitle("SM16"); // To change title later, need to set initial title before setSupportActionbar(), or in the activity_main.xml toolbar as: app:title="SM16"
+        toolbar.setTitle(contentsTitlePrefix); // To change title later, need to set initial title before setSupportActionbar(), or in the activity_main.xml toolbar as: app:title="SM16"
         // see: http://stackoverflow.com/questions/26486730/in-android-app-toolbar-settitle-method-has-no-effect-application-name-is-shown
 
         setSupportActionBar(toolbar);
@@ -996,13 +1009,49 @@ and this snippet to the activity :-
             /*YOUR CHOICE OF COLOR*/
                 // && (position<unreads.size() ass ume is correct.
                 if (iCurrent>iContents) { // This assumes iCurrent is set BEFORE the ListView is displayed!
-                    textView.setTextColor(unreads.get(position)==0 ? Color.BLACK : Color.BLUE);
-                    view.setBackgroundColor(goings.get(position)==0 ? Color.WHITE : Color.CYAN);
+                    //textView.setTextColor(unreads.get(position)==0 ? Color.BLACK : Color.BLUE);
+                    // If have set a custom type face, then use: "textView.getTypeface()" instead of "null" below:
+                    textView.setTextColor(Color.BLACK);
+                    textView.setTypeface(null, unreads.get(position)==0 ? Typeface.NORMAL : Typeface.BOLD);
+                    view.setBackgroundColor(goings.get(position)==0 ? Color.WHITE : Color.YELLOW); // or Color.CYAN
                 }
                 else {
                     textView.setTextColor(Color.BLACK);
-                    view.setBackgroundColor(Color.WHITE);
+                    textView.setTypeface(null, unreads.get(position)==0 ? Typeface.NORMAL : Typeface.BOLD);
+                    view.setBackgroundColor(contents_bg_colour);
                 }
+//================================================================
+// From: http://stackoverflow.com/questions/4623508/how-to-set-the-font-style-to-bold-italic-and-underlined-in-an-android-textview
+//TextView tv = (TextView)findViewById(R.id.textViewOne);
+//tv.setTypeface(null, Typeface.BOLD_ITALIC);
+// OR:  tv.setTypeface(null, Typeface.BOLD|Typeface.ITALIC);
+// OR:  tv.setTypeface(null, Typeface.BOLD);
+// OR:  tv.setTypeface(null, Typeface.ITALIC);
+// AND: tv.setPaintFlags(tv.getPaintFlags()|Paint.UNDERLINE_TEXT_FLAG);
+
+// Below is the code for default Typeface
+
+// textView.setTypeface(null, Typeface.NORMAL);      // for Normal Text
+// textView.setTypeface(null, Typeface.BOLD);        // for Bold only
+// textView.setTypeface(null, Typeface.ITALIC);      // for Italic
+// textView.setTypeface(null, Typeface.BOLD_ITALIC); // for Bold and Italic
+
+// and if you want to set custom Typeface:
+// textView.setTypeface(textView.getTypeface(), Typeface.NORMAL);      // for Normal Text
+// textView.setTypeface(textView.getTypeface(), Typeface.BOLD);        // for Bold only
+// textView.setTypeface(textView.getTypeface(), Typeface.ITALIC);      // for Italic
+// textView.setTypeface(textView.getTypeface(), Typeface.BOLD_ITALIC); // for Bold and Italic
+
+// XML: You can set Directly in XML file in like:
+// android:textStyle="normal"
+// android:textStyle="normal|bold"
+// android:textStyle="normal|italic"
+// android:textStyle="bold"
+// android:textStyle="bold|italic"
+// =======================================================
+
+
+
 
 // I could also set an icon if the layout has an image view, eg: http://android-er.blogspot.co.uk/2010/06/using-convertview-in-getview-to-make.html
 //                ImageView icon=(ImageView)row.findViewById(R.id.icon);
@@ -1102,11 +1151,19 @@ and this snippet to the activity :-
 
 //                showCustomDialog(MainActivity.this, title, message, image_id);
 
+
+
                 //showAlertDialog(MainActivity.this, "Position", "position="+Integer.toString(position)+"ids.size="+Integer.toString(ids.size()), false);
                 //showAlertDialog(MainActivity.this, "get_details", "position="+Integer.toString(position)+"id=="+Integer.toString(ids.get(position)), false);
                 if (get_details_from_database(ids.get(position))) {
                     //showAlertDialog(MainActivity.this, "got_details", "position="+Integer.toString(position)+"id=="+Integer.toString(ids.get(position)), false);
+
                     current_detail_position_in_array = position; // Useful for the Next button
+// Could highlight the background colour - or maybe there is a setHighlight
+//                    String colorCode = itemsAdapter.getItem(position);
+//                    setBackgroundColor(colorCode);
+
+
                     showCustomDialog(MainActivity.this, current_detail_title, current_detail_text, current_detail_image);
                     // should maybe do the following before showing the custom dialog, in case person hit Next very quickly, so would move to next detail - but maybe that is ok.
                     set_current_detail_to_read(); // Uses the current_detail_unread, current_detail_rowid and current_detail_position_in_array
@@ -1159,6 +1216,9 @@ public void add_array_to_database() {
     if (db.getVersion() == dataVersion) {return;}
 
     showAlertDialog(MainActivity.this, "Recreating database", "Current db.getVersion()="+Integer.toString(db.getVersion())+", but SmDataArray.dataVersion="+Integer.toString(dataVersion), false);
+
+    FirebaseCrash.log("Creating database");
+
     // execSQL(..) returns void (ie. nothing), but raises exception on error:
     db.execSQL("DROP TABLE IF EXISTS chapter;");    // just for developing
     db.execSQL("DROP TABLE IF EXISTS page;");    // just for developing
@@ -1171,7 +1231,7 @@ public void add_array_to_database() {
 
     try {
         db.beginTransaction();
-        SQLiteStatement sql_chapter = db.compileStatement("INSERT INTO chapter (chapter,version,title,colour,unread) VALUES(?,?,?,?,1);");
+        SQLiteStatement sql_chapter = db.compileStatement("INSERT INTO chapter (chapter,version,title,colour,unread) VALUES(?,?,?,?,?);");
         SQLiteStatement sql_page = db.compileStatement("INSERT INTO page (page,version,chapter,title,detail,image,unread,going) VALUES(?,?,?,?,?,?,1,0);");
         // String stm = "INSERT INTO page VALUES('" + line[0] + "','C', '" + line[1] + "','" + line[2] + "', '');"
         String chapter = "";
@@ -1192,6 +1252,7 @@ public void add_array_to_database() {
                 sql_chapter.bindLong(2, dataVersion); // version of the data to enable updates to this record later.
                 sql_chapter.bindString(3, line[1]);  // title
                 sql_chapter.bindString(4, line[2]);  // colour
+                sql_chapter.bindLong(5, chapter.equals(SmDataArray.inboxChapter) ? 1 : 0);  // set unread to zero initially for now, except for the one inbox entry.
                 long rowId = sql_chapter.executeInsert();
             }
             else {
@@ -1248,13 +1309,15 @@ public void add_array_to_database() {
         // In case the first notification processing occurs before the database is created:
         add_array_to_database();
         if (( db == null) || !db.isOpen()) {
-            // The following is from Context (as another ordering of these arguments in class Database)
             db = openOrCreateDatabase(DBNAME, Context.MODE_PRIVATE, null);
             // or: db = dbHelper.getWritabledatabase();
         }
-        // Maybe wrap in a transaction, but just autocommit for now.
-        // In future set message page, eg: 3.02, etc and version.
+
+        // **** From: http://stackoverflow.com/questions/20136146/android-update-database-column-based-on-the-current-column-value
+        // That page also has info on adding a new column then updating that column.
+
         SQLiteStatement sql_page = db.compileStatement("INSERT INTO page (page,version,chapter,title,detail,image,unread,going) VALUES(?,?,?,?,?,?,1,0);");
+        // In future set message page, eg: 3.02, etc and version.
         sql_page.bindString(1, SmDataArray.inboxChapter);   // + subpage id, eg: 3.02   // id. Note these bindString(...) indexes are 1-based positions.
         sql_page.bindLong(2, 1); // version of the data to enable updates to this record later.
         sql_page.bindString(3, SmDataArray.inboxChapter);   // chapter - is foreign key to the chapter table.
@@ -1262,23 +1325,74 @@ public void add_array_to_database() {
         sql_page.bindString(5, detail);   // detail
         sql_page.bindLong(6, -1);         // image
         // stm.bindAllArgsAsStrings(new String[]{line[0], "C", line[1], line[2], ""}); // BUT needs API 11, I've set minTarget to 7
-        // db.execSQL("INSERT INTO page VALUES('" + line[0] + "',+"', '" + title + "','" + detail + "', '" +image+ "');");
-        long rowId = sql_page.executeInsert();
 
+        //SQLiteStatement sql_chapter = db.compileStatement("UPDATE chapter SET unread = unread + 1 WHERE chapter = '"+SmDataArray.inboxChapter+"'");
+        String sql_chapter = "UPDATE chapter SET unread = unread + 1 WHERE chapter = ?";
+        // OR: String sql_chapter = "UPDATE chapter SET unread = unread + 1 WHERE chapter = '"+SmDataArray.inboxChapter+"'";
+
+        try {
+            db.beginTransaction();
+
+            long rowId = sql_page.executeInsert();
+
+            // int num_updated = sql_chapter.executeUpdateDelete(); // This needs API 11
+            // if (num_updated!=1) {showAlertDialog(MainActivity.this, "set chapter unread column in db, num_updated (="+Integer.toString(num_updated)+") != 1", false);}
+            db.execSQL(sql_chapter, new String[] { SmDataArray.inboxChapter } );
+
+            db.setTransactionSuccessful();
+        } catch (Exception e) {
+            Log.w("Exception:", e);
+        } finally {
+            db.endTransaction();
+        }
+        if (!keepdbopen) {db.close(); db = null;} // =null to indicate that it is closed.
+        // return (num_updated==1);
+    }
+
+    public boolean set_page_column_in_db(int rowid, String column, int newValue)
+    {
+        if ((db==null) || !db.isOpen()) {
+            // The following is from Context (as another ordering of these arguments in class Database)
+            db = openOrCreateDatabase(DBNAME, Context.MODE_PRIVATE, null);
+        }
+        ContentValues values = new ContentValues();
+        values.put(column,newValue);
+        // I'm assumming autocommit, otherwise need to wrap this update inside a transaction:
+        int num_updated = db.update("page", values, "rowid=" + Integer.toString(rowid), null); // Tried "_id=" instead of "rowid=", but crashed with message: android.database.sqlite.SQLiteException: no such column: _id (code 1): , while compiling: UPDATE page SET unread=? WHERE _id=40
+
+        if (num_updated!=1) {showAlertDialog(MainActivity.this, "set_page_column_in_db("+column+", "+Integer.toString(rowid)+")", "num_updated (="+Integer.toString(num_updated)+") != 1", false);}
+
+        if (!keepdbopen) {db.close(); db = null;} // =null to indicate that it is closed.
+        return (num_updated==1);
     }
 
 
-    public void get_contents_from_database(List<String> chapters, List<String> items)
+    public void reduce_chapter_unread_column_in_db(String chapter)
+    {
+        if ((db==null) || !db.isOpen()) {
+            // The following is from Context (as another ordering of these arguments in class Database)
+            db = openOrCreateDatabase(DBNAME, Context.MODE_PRIVATE, null);
+        }
+
+        String sql_chapter = "UPDATE chapter SET unread = unread - 1 WHERE chapter = ?";
+        db.execSQL(sql_chapter, new String[] { chapter } );
+
+        if (!keepdbopen) {db.close(); db = null;} // =null to indicate that it is closed.
+    }
+
+
+    public void get_contents_from_database(List<String> chapters, List<String> items, List<Integer> unreads)
     {
         if ((db==null) || !db.isOpen()) {
             // The following is from Context (as another ordering of these arguments in class Database)
             db = openOrCreateDatabase(DBNAME, Context.MODE_PRIVATE, null);
         }
         // NOTE: The rawQuery() SQL string must NOT be terminated with a semicolon:
-        Cursor c = db.rawQuery("SELECT chapter, title FROM chapter ORDER BY chapter", null);
+        Cursor c = db.rawQuery("SELECT chapter, title, unread FROM chapter ORDER BY chapter", null);
         if (c.moveToFirst()) do {
             chapters.add(c.getString(0)); // chapter, eg: "1" for Welcome
             items.add(c.getString(1));    // title, eg: "Welcome"
+            unreads.add(c.getInt(2));     // unread column
         } while (c.moveToNext());
         c.close(); // close the cursor.
         if (!keepdbopen) {db.close(); db = null;} // =null to indicate that it is closed.
@@ -1341,22 +1455,6 @@ public void add_array_to_database() {
     }
 
 
-    public boolean set_page_column_in_db(int rowid, String column, int newValue)
-    {
-        if ((db==null) || !db.isOpen()) {
-            // The following is from Context (as another ordering of these arguments in class Database)
-            db = openOrCreateDatabase(DBNAME, Context.MODE_PRIVATE, null);
-        }
-        ContentValues values = new ContentValues();
-        values.put(column,newValue);
-        // I'm assumming autocommit, otherwise need to wrap this update inside a transaction:
-        int num_updated = db.update("page", values, "rowid=" + Integer.toString(rowid), null); // Tried "_id=" instead of "rowid=", but crashed with message: android.database.sqlite.SQLiteException: no such column: _id (code 1): , while compiling: UPDATE page SET unread=? WHERE _id=40
-
-        if (num_updated!=1) {showAlertDialog(MainActivity.this, "set_page_column_in_db("+column+", "+Integer.toString(rowid)+")", "num_updated (="+Integer.toString(num_updated)+") != 1", false);}
-
-        if (!keepdbopen) {db.close(); db = null;} // =null to indicate that it is closed.
-        return (num_updated==1);
-    }
 /*
 Can add Helper class, eg:
     // From: http://www.techotopia.com/index.php/An_Android_Studio_SQLite_Database_Tutorial
@@ -1477,8 +1575,8 @@ public void set_back_button(boolean setback) {
     if (setback) {
         //Toolbar t = activity.getToolbar();
         toolbar.setNavigationContentDescription("Back to main Contents menu"); // for users with poor eyesigh, that user readers.
-        toolbar.setNavigationIcon(R.drawable.   ic_arrow_back_white_48dp);  // or void setNavigationIcon (int resId)
-
+        // toolbar.setNavigationIcon(R.drawable.ic_arrow_back_white_48dp);  // or void setNavigationIcon (int resId)
+        toolbar.setNavigationIcon(R.drawable.ic_chevron_left_white_48dp);
         //toggle.setToolbarNavigationClickListener(new View.OnClickListener() {
 
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
@@ -1494,6 +1592,35 @@ public void set_back_button(boolean setback) {
         toolbar.setNavigationOnClickListener(null); // probably not needed as button not visible so not clickable
     }
 }
+
+
+/*
+From: https://github.com/firebase/quickstart-android/
+If your app is just in the background, onNewIntent would be called.
+If your app is not running at all, the intent is normally passed through the onCreate, where you should handle it. Can you check this ?
+    //NOTIFICAITON HANDLE
+    @Override
+    public void onNewIntent(Intent intent) {
+        Bundle extras = intent.getExtras();
+        if (extras != null) {
+            if (extras.containsKey("local_notification_message")) {
+            }
+        }
+    }
+*/
+
+/* From: https://github.com/firebase/quickstart-android/tree/master/messaging
+    Send to a topic
+
+    From Firebase console Notification section, click New Message.
+    Enter the text of your message in the Message Text field.
+    Hit the SUBSCRIBE TO NEWS button to subscribe to the news topic.
+    Set the target to Topic.
+    Select the news topic from the list of topics. You must subscribe from the device or emulator before the topic will will be visible in the console.
+    Click Send Message.
+    If your application is in the foreground you should see the incoming message printed in the logs. If it is in the background, a system notification should be displayed, and when tapped should return to the quickstart app.
+*/
+
 
 public void firebase_cloud_messenging()
     {
@@ -1544,6 +1671,7 @@ public void firebase_cloud_messenging()
         //logTokenButton.setOnClickListener(new View.OnClickListener() {
         //    @Override
         //    public void onClick (View v){
+        // BUT this token isn't available until OnToken() is called:
         Log.d(TAG, "InstanceID token: " + FirebaseInstanceId.getInstance().getToken());
         //    }
         //});
@@ -1562,7 +1690,7 @@ public void firebase_cloud_messenging()
 
         // Inflate the menu; this adds items to the action bar if it is present.
         super.onCreateOptionsMenu(menu); // as super class may add extra system menu options
-        getMenuInflater().inflate(R.menu.menu, menu); // to (optionally) use a resource file, "main.xml"
+        //getMenuInflater().inflate(R.menu.menu, menu); // to (optionally) use a resource file, "main.xml"
         /*
         // Can create items dynamically as below: http://www.101apps.co.za/articles/using-menus-in-your-apps-a-tutorial.html
         String title = "@string/action_register";
@@ -1644,10 +1772,11 @@ public void firebase_cloud_messenging()
 
         if (array_index==-1) {
             current_chapter = "-1"; // or 0 or "C"
-            current_title="SM16: Contents";
+            current_chapter_title= contentsTitlePrefix+": Contents";
             chapters.clear();
             items.clear(); // The items visible in the Listview
-            get_contents_from_database(chapters, items); // chapter -1 is the chapter table
+            unreads.clear();
+            get_contents_from_database(chapters, items, unreads); // chapter -1 is the chapter table
             //for (int i = 0; i < data.length; i++) { // i starts at 1, as 0 is the title.
             //    // if pages within that section/chapter, then could add ' ...' to the line to indicate that can tap line to see detail.
             //    if ((data[i].length > 0) && (data[i][0].length > 1)) {
@@ -1658,8 +1787,8 @@ public void firebase_cloud_messenging()
         else {
             // toolbar.setTitle(((lines.length > 0) && (lines[0].length > 1) ? lines[0][1] : "")); // "SM16: " +
             current_chapter = chapters.get(array_index); // is position);
-            current_title = items.get(array_index);
-            //showAlertDialog(MainActivity.this, "setListView() 3", "array_index="+Integer.toString(array_index)+" current_chapter="+current_chapter+" current_title="+current_title, false);
+            current_chapter_title = items.get(array_index);
+            //showAlertDialog(MainActivity.this, "setListView() 3", "array_index="+Integer.toString(array_index)+" current_chapter="+current_chapter+" current_chapter_title="+current_chapter_title, false);
             ids.clear(); // the line ids that correspond to the titles in the itemns list
             items.clear();
             unreads.clear();
@@ -1679,7 +1808,7 @@ public void firebase_cloud_messenging()
         }
 
         iCurrent = array_index; // This iCurrent needs set before ListView is drawn (before adapter.notifyDataSetChanged()) as is used by ArrayAdapter's getView
-        toolbar.setTitle(current_title); // "SM16: " +
+        toolbar.setTitle(current_chapter_title); // "SM16: " +
         adapter.notifyDataSetChanged();
         set_back_button(iCurrent>iContents); // To enable the back button in the toolbar
         return true;

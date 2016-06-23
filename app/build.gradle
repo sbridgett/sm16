@@ -38,6 +38,8 @@ dependencies {
 
     // For messenging:
     compile 'com.google.firebase:firebase-messaging:9.0.2'
+    // For logging crashes, and uncaught exceptions:
+    compile 'com.google.firebase:firebase-crash:9.0.2'
 }
 
 apply plugin: 'com.google.gms.google-services'

@@ -5,7 +5,7 @@
 
     <!-- This min sdk is also declared in gradle.build -->
     <!-- Removed:  com.google.android.gms.gcm,  -->
-    <uses-sdk android:minSdkVersion="7" tools:overrideLibrary="com.google.android.gms.base, com.google.android.gms, com.google.firebase, com.google.android.gms.tasks, com.google.android.gms.iid, com.google.firebase.messaging, com.google.firebase.iid, com.google.firebase.firebase_core, com.google.android.gms.measurement, com.google.android.gms.measurement.impl" />
+    <uses-sdk android:minSdkVersion="7" tools:overrideLibrary="com.google.android.gms.base, com.google.android.gms, com.google.firebase, com.google.android.gms.tasks, com.google.android.gms.iid, com.google.firebase.messaging, com.google.firebase.iid, com.google.firebase.firebase_core, com.google.android.gms.measurement, com.google.android.gms.measurement.impl, com.google.firebase.crash" />
 
 
     <!-- my application version is stored in build.gradle (Module: app) file. alternatively can store in the manifest above with package as:
@@ -44,8 +44,10 @@
     java.lang.RuntimeException: Unable to start activity ComponentInfo{uk.co.summermadness.sm16/uk.co.summermadness.sm16.MainActivity}: java.lang.IllegalStateException:
     This Activity already has an action bar supplied by the window decor. Do not request Window.FEATURE_SUPPORT_ACTION_BAR and set windowActionBar to false in your theme to use a Toolbar instead.
     -->
+
+<!-- Nolonger using the SmApp subclass:         android:name=".SmApp" -->
+
     <application
-        android:name=".SmApp"
         android:theme="@style/AppTheme"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -90,12 +92,12 @@
         <!-- [START firebase_iid_service] -->
         <!-- A service that extends FirebaseInstanceIdService to handle the creation, rotation, and updating of registration tokens. This is required for sending to specific devices or for creating device groups. -->
 <!-- Disabled the ID service as currently sending notifications to all users that subscribed to a topic -->
-        <!-- service
+        <service
             android:name=".MyFirebaseInstanceIDService">
             <intent-filter>
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/>
             </intent-filter>
-        </service -->
+        </service>
         <!-- [END firebase_iid_service] -->
 
     </application>
