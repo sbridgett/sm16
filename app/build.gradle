@@ -5,11 +5,11 @@ android {
     buildToolsVersion "23.0.3"
 
     defaultConfig {
-        applicationId "uk.co.summermadness.sm16"
+        applicationId "uk.co.summermadness.sm16v1"
         minSdkVersion 7
         targetSdkVersion 23
-        versionCode 1
-        versionName "0.5"
+        versionCode 2
+        versionName "0.6"
     }
     buildTypes {
         debug {debuggable true}

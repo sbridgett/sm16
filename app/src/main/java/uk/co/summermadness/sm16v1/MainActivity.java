@@ -1,7 +1,7 @@
-package uk.co.summermadness.sm16;
-
+package uk.co.summermadness.sm16v1;
 // ** It can take a couple of hours (even a day) for  a new topic to appear in Firebase notification console:
 // http://stackoverflow.com/questions/37367292/how-to-create-topic-in-fcm-notifications
+
 
 
 //  If your organization has a firewall that restricts the traffic to or from the Internet, you need to configure it to allow connectivity with FCM in order for your Firebase Cloud Messaging client apps to receive messages. The ports to open are: 5228, 5229, and 5230. FCM typically only uses 5228, but it sometimes uses 5229 and 5230. FCM doesn't provide specific IPs, so you should allow your firewall to accept outgoing connections to all IP addresses contained in the IP blocks listed in Google's ASN of 15169.
@@ -14,7 +14,7 @@ package uk.co.summermadness.sm16;
 // In gradle.build
 // Can see latest versions at: dir C:\Users\HP\AppData\Local\Android\sdk\extras\google\m2repository\com\google\android\gms\play-services
 // Error:Execution failed for task ':app:processDebugManifest'.
-//> Manifest merger failed : uses-sdk:minSdkVersion 7 cannot be smaller than version 9 declared in library [com.google.android.gms:play-services-base:9.0.0] C:\Users\HP\AndroidStudioProjects\sm16\app\build\intermediates\exploded-aar\com.google.android.gms\play-services-base\9.0.0\AndroidManifest.xml
+//> Manifest merger failed : uses-sdk:minSdkVersion 7 cannot be smaller than version 9 declared in library [com.google.android.gms:play-services-base:9.0.0] C:\Users\HP\AndroidStudioProjects\sm16v1\app\build\intermediates\exploded-aar\com.google.android.gms\play-services-base\9.0.0\AndroidManifest.xml
 //        Suggestion: use tools:overrideLibrary="com.google.android.gms.base" to force usage
 // I think could test the os version, and only call Batch if 2.3 or greater:
 
@@ -39,7 +39,7 @@ package uk.co.summermadness.sm16;
 
 
 //import android.app.ActionBar;
-import android.app.Application;
+
 import android.app.Dialog;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -67,6 +67,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -91,8 +92,6 @@ import java.util.List;
 //import android.support.v7.app.ActionBar; // when using the Support Library, see: https://developer.android.com/topic/libraries/support-library/setup.html
 // when using the support library be sure to use the ProGuard tool for your APK for release, as it removes unused libraries so smaller app.
 
-import uk.co.summermadness.sm16.SmDataArray;
-
 // To retrieve the app version number (set in build.gradle Module:app) use the getPackageInfo(java.lang.String, int) method of PackageManager
 // Imports for Batch:
 // import com.batch.android.Batch;
@@ -108,7 +107,6 @@ import com.google.firebase.messaging.FirebaseMessaging;
 
 // SQLite database access:
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.database.Cursor;
 
 // DB actions are:
@@ -346,10 +344,10 @@ public class MainActivity extends AppCompatActivity {
     private List<String> chapters=null, items=null;
     private ArrayAdapter<String> adapter;
     private Dialog dialog = null;
-    private static final String DBNAME = "sm16db";
-    private static final String contentsTitlePrefix = "SM16v1";
-    private SQLiteDatabase db = null;
-    boolean keepdbopen = true; // To keep db open until this Activites' onDestroy()
+    protected static final String DBNAME = "sm16db"; // not private as is used by MyFirebaseMessengingService.java.
+    private static final String contentsTitlePrefix = "SM16v2";
+    private static final boolean keepdbopen = true; // To keep db open until this Activites' onDestroy() or onPause()
+    private static SQLiteDatabase db = null; // making this static so could call from other activities.
 
     private int lastNotificationId = 0;
 
@@ -374,7 +372,7 @@ public class MainActivity extends AppCompatActivity {
 
     public static final int contents_bg_colour = Color.rgb(230, 240, 255); // for a light blue. or: Color.parseColor("#FFFFC0"), or for transparency: Color.argb(0,255,255,200)
 
-    static final int iNone=-2, iContents=-1, iWelcome = 0, iInfo = 1, iVenues = 2, iSpeakers = 3, iFriday = 4, iSaturday = 5, iSunday = 6, iMonday = 7, iWhatNext = 8, iInbox = 9;
+    static final int iNone=-2, iContents=-1, iWelcome = 0, iRulesInfo = 1, iInbox = 2, iVenuesSpeakers = 3, iFriday = 4, iSaturday = 5, iSunday = 6, iMonday = 7, iTuesdayWhatNext = 8;
     int iCurrent = iNone; // iWelcome; // Start on the welcome page.
     private String current_chapter="", current_chapter_title="", current_detail_title="", current_detail_text="";
     private int current_detail_position_in_array = -1, current_detail_rowid = -1, current_detail_unread = -1, current_detail_going = -1;
@@ -480,6 +478,31 @@ public class MainActivity extends AppCompatActivity {
         super.onStop();
     }
 */
+
+
+    @Override
+    protected void onPause()
+    {
+        // "..many will also implement onPause() to commit changes to data and otherwise prepare to stop interacting with the user. You should always call up to your superclass when implementing these methods.
+        if ((db!=null) && db.isOpen()) {db.close(); db=null;} // Close the database.
+        super.onPause();
+    }
+/*
+    {
+        "to" : "APA91bHun4MxP5egoKMwt2KZFBaFUH-1RYqx...",
+
+            "notification" : {
+        "body" : "great match!",
+                "title" : "Portugal vs. Denmark",
+                "icon" : "myicon"
+    },
+        "data" : {
+        "Nick" : "Mario",
+                "Room" : "PortugalVSDenmark"
+    }
+    }
+*/
+
     @Override
     protected void onDestroy() {
         // https://developer.android.com/reference/android/app/Activity.html#onDestroy()
@@ -487,7 +510,7 @@ public class MainActivity extends AppCompatActivity {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.GINGERBREAD) {
     //      Batch.onDestroy(this);
         }
-        if ((db!=null) && db.isOpen()) {db.close();} // Close the database.
+        if ((db!=null) && db.isOpen()) {db.close(); db=null;} // Close the database.
         super.onDestroy();
     }
 /*
@@ -803,7 +826,7 @@ and this snippet to the activity :-
         // NOTIFICATION NOT NEEDED AT PRESENT: showNotification("My Notify", "Starting app", 1);
         //showAlertDialog(MainActivity.this, "add_array_to_database()", "Calling", false);
         add_array_to_database();
-
+        get_any_firebase_messenge_from_intent(); // do this after creating the database, but before the user interface as might add unread firebase message to Inbox.
         //showAlertDialog(MainActivity.this, "initialise_user_interface()", "Calling", false);
         initialise_user_interface(savedInstanceState);
 
@@ -816,7 +839,7 @@ and this snippet to the activity :-
              if (checkPlayServices()) {   // Needs working version of Google play services.
                 //try {
                 Log.d("MyFirebase", "Calling firebase_cloud_messenging()");
-                firebase_cloud_messenging();
+                subscribe_to_firebase_cloud_messenging();
                 Log.d("MyFirebase", "After calling firebase_cloud_messenging()");
             }
             //    Batch.onStart(this);
@@ -836,7 +859,10 @@ and this snippet to the activity :-
     protected void onResume() {
         super.onResume();
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.GINGERBREAD) { // As Batch needs Sdk 9 or above
-             checkPlayServices();   // Needs working version of Google play services - should check this in onCreate and onResume (ie. back button pressed from another app).
+             if (checkPlayServices())   // Needs working version of Google play services - should check this in onCreate and onResume (ie. back button pressed from another app).
+             {
+             //    get_any_firebase_messenge_from_intent(); n// Not calling this for now as was adding messages twice - onCreate() and onResume.
+             }
         }
     }
 
@@ -863,7 +889,7 @@ and this snippet to the activity :-
 
     protected void initialise_user_interface(Bundle savedInstanceState) {
         //showAlertDialog(MainActivity.this, "initialise_user_interface()", "initialise_user_interface", false);
-        setContentView(R.layout.activity_main);
+        setContentView(uk.co.summermadness.sm16v1.R.layout.activity_main);
 
 
 /*
@@ -944,7 +970,7 @@ and this snippet to the activity :-
     // ===========================================================================
 */
         // Toolbar seems better than ActionBar
-        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar = (Toolbar) findViewById(uk.co.summermadness.sm16v1.R.id.toolbar);
         if (toolbar == null) {
             showAlertDialog(MainActivity.this, "Error", "Failed to find the Toolbar", false);
             return;
@@ -1075,7 +1101,7 @@ and this snippet to the activity :-
         if (iCurrent==iNone) {setListView(iContents);} // will initially be the iContents
 
         // Get ListView from XML:
-        listView = (ListView) findViewById(R.id.listView);
+        listView = (ListView) findViewById(uk.co.summermadness.sm16v1.R.id.listView);
 
         //showAlertDialog(MainActivity.this, "Test", "Test dialog again", false);
 
@@ -1215,9 +1241,10 @@ public void add_array_to_database() {
     int dataVersion = SmDataArray.dataVersion;
     if (db.getVersion() == dataVersion) {return;}
 
-    showAlertDialog(MainActivity.this, "Recreating database", "Current db.getVersion()="+Integer.toString(db.getVersion())+", but SmDataArray.dataVersion="+Integer.toString(dataVersion), false);
+    // showAlertDialog(MainActivity.this, "Recreating database", "Current db.getVersion()="+Integer.toString(db.getVersion())+", but SmDataArray.dataVersion="+Integer.toString(dataVersion), false);
+    showAlertDialog(MainActivity.this, "Welcome to "+contentsTitlePrefix+" app", "This is version "+contentsTitlePrefix+" of the app which should fix problem with displaying the popup dialog window differently in newer versions of Android, and also uses latest SM16 database version: "+Integer.toString(SmDataArray.dataVersion) , false);
 
-    FirebaseCrash.log("Creating database");
+    //FirebaseCrash.log("Creating database");
 
     // execSQL(..) returns void (ie. nothing), but raises exception on error:
     db.execSQL("DROP TABLE IF EXISTS chapter;");    // just for developing
@@ -1304,8 +1331,11 @@ public void add_array_to_database() {
 
 
 
-    protected void add_notification_to_inbox(String title, String detail)
+    protected void add_notification_to_inbox(String title, String detail, String page, int version)
     {
+        // *** NOTE THIS FUNCTION IS COPIED IN MyFirebaseMessengingService.java, so any change here needs done there as well.
+
+        if (page.equals("")) {page=SmDataArray.inboxChapter;}
         // In case the first notification processing occurs before the database is created:
         add_array_to_database();
         if (( db == null) || !db.isOpen()) {
@@ -1316,10 +1346,12 @@ public void add_array_to_database() {
         // **** From: http://stackoverflow.com/questions/20136146/android-update-database-column-based-on-the-current-column-value
         // That page also has info on adding a new column then updating that column.
 
+        // ******* Should first test here is this id and version is already in the database:
+
         SQLiteStatement sql_page = db.compileStatement("INSERT INTO page (page,version,chapter,title,detail,image,unread,going) VALUES(?,?,?,?,?,?,1,0);");
         // In future set message page, eg: 3.02, etc and version.
-        sql_page.bindString(1, SmDataArray.inboxChapter);   // + subpage id, eg: 3.02   // id. Note these bindString(...) indexes are 1-based positions.
-        sql_page.bindLong(2, 1); // version of the data to enable updates to this record later.
+        sql_page.bindString(1, page);   // + subpage id, eg: 3.02   // id. Note these bindString(...) indexes are 1-based positions.
+        sql_page.bindLong(2, version); // version of the data to enable updates to this record later.
         sql_page.bindString(3, SmDataArray.inboxChapter);   // chapter - is foreign key to the chapter table.
         sql_page.bindString(4, title);    // title
         sql_page.bindString(5, detail);   // detail
@@ -1521,7 +1553,7 @@ Can add Helper class, eg:
 
         db.insert(TABLE_PRODUCTS, null, values);
 
-        db.close();
+        db.close(); db=null;
     }
 
     ===
@@ -1576,7 +1608,7 @@ public void set_back_button(boolean setback) {
         //Toolbar t = activity.getToolbar();
         toolbar.setNavigationContentDescription("Back to main Contents menu"); // for users with poor eyesigh, that user readers.
         // toolbar.setNavigationIcon(R.drawable.ic_arrow_back_white_48dp);  // or void setNavigationIcon (int resId)
-        toolbar.setNavigationIcon(R.drawable.ic_chevron_left_white_48dp);
+        toolbar.setNavigationIcon(uk.co.summermadness.sm16v1.R.drawable.ic_chevron_left_white_48dp);
         //toggle.setToolbarNavigationClickListener(new View.OnClickListener() {
 
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
@@ -1622,27 +1654,67 @@ If your app is not running at all, the intent is normally passed through the onC
 */
 
 
-public void firebase_cloud_messenging()
+public void get_any_firebase_messenge_from_intent()
     {
-        // If a notification message is tapped, any data accompanying the notification
-        // message is available in the intent extras. In this sample the launcher
-        // intent is fired when the notification is tapped, so any accompanying data would
-        // be handled here. If you want a different intent fired, set the click_action
-        // field of the notification message to the desired intent. The launcher intent
-        // is used when no click_action is specified.
-        //
-        // Handle possible data accompanying notification message.
-        // [START handle_data_extras]
-        if(getIntent().getExtras() != null)
-        {
-            for (String key : getIntent().getExtras().keySet()) {
-                String value = getIntent().getExtras().getString(key);
-                Log.d(TAG, "Key: " + key + " Value: " + value);
-                // In future could add message id and version info, so can replace previous messages.
-                add_notification_to_inbox(key,value);
+    // If a notification message is tapped, any data accompanying the notification
+    // message is available in the intent extras. In this sample the launcher
+    // intent is fired when the notification is tapped, so any accompanying data would
+    // be handled here. If you want a different intent fired, set the click_action
+    // field of the notification message to the desired intent. The launcher intent
+    // is used when no click_action is specified.
+    //
+    // Handle possible data accompanying notification message.
+    // [START handle_data_extras]
+    //String msg = "getAction(): "+getIntent().getAction()
+    //    +"getDataString(): "+getIntent().getDataString()
+    //    +"toString(): "+getIntent().toString()+"\n";
+    String from="", title="", message="", page="", date="";
+    int msg_count=0, version=1;
+    if(getIntent().getExtras() != null)
+    {
+        for (String key : getIntent().getExtras().keySet()) {
+            String value = getIntent().getExtras().getString(key);
+            Log.d(TAG, "Key: " + key + " Value: " + value);
+            // In future could add message id and version info, so can replace previous messages.
+            // if (key.equals(""))
+
+            if (key.equals("from")) {from=value;}
+            else if (key.equals("page")) {page=value;}
+            else if (key.equals("date")) {date="    Date: "+value;}
+            else if (key.equals("version")) {
+                try {
+                    version = Integer.parseInt(value);
+                } catch (NumberFormatException nfe) {
+                    showAlertDialog(MainActivity.this, "Warning", "Could not read message version number from: " + value, false);
+                    version=1;
+                }
             }
+            else if (!key.equals("collapse_key"))
+            {
+                title += (title.equals("") ? "" : ", ")+key;
+                message += (message.equals("") ? "" : "\n")+value;
+            }
+            //msg += "Key: " + key + " Value: " + value+"\n";
         }
-        // [END handle_data_extras]
+        if (from.substring(0,8).equals("/topics/")) {
+            message="ToI: "+from.substring(8) + date + "\n"+message;
+            add_notification_to_inbox(title,message, page, version);
+            msg_count++;
+        }
+        if (msg_count==1) {showAlertDialog(MainActivity.this, "New message", "There is a new message in your Inbox", false);}
+        else if (msg_count>1) {showAlertDialog(MainActivity.this, "New messages", "There are "+msg_count+" new messages in your Inbox", false);}
+
+    }
+    // [END handle_data_extras]
+
+
+    }
+
+
+public void subscribe_to_firebase_cloud_messenging()
+    {
+
+        //get_any_firebase_messenge_from_intent();
 
         //Button subscribeButton = (Button) findViewById(R.id.subscribeButton);
         //assert subscribeButton != null;
@@ -1655,13 +1727,15 @@ public void firebase_cloud_messenging()
 
         // *** Good info here on how to send notifications from your own app server: https://firebase.google.com/docs/cloud-messaging/topic-messaging#sending_topic_messages_from_the_serverv
         FirebaseMessaging.getInstance().subscribeToTopic("all");
+        FirebaseMessaging.getInstance().subscribeToTopic("eventcrew");
+        // FirebaseMessaging.getInstance().subscribeToTopic("campers");
         // FirebaseMessaging.getInstance().subscribeToTopic("news");
 
         // To unsubscribe, the client app calls Firebase Cloud Messaging unsubscribeFromTopic() with the topic name.
 
         // Other topics could use include:  teens, site_team, security, etc ......
 
-        Log.d(TAG, "Subscribed to topic 'all'");
+        Log.d(TAG, "Subscribed to topics: 'all', 'eventcrew', 'campers'");
         // [END subscribe_topics]
         //        }
         //});
@@ -1858,22 +1932,23 @@ public void firebase_cloud_messenging()
 
     protected void set_custom_dialog_contents(Dialog dialog, String title, String message, int imageId) {
         // Could disable the Next button:
-        Button nextButton = (Button) dialog.findViewById(R.id.nextbutton);
+        Button nextButton = (Button) dialog.findViewById(uk.co.summermadness.sm16v1.R.id.nextbutton);
         nextButton.setEnabled(current_detail_position_in_array+1 < ids.size());
 
-        Button goButton = (Button) dialog.findViewById(R.id.gobutton);
+        Button goButton = (Button) dialog.findViewById(uk.co.summermadness.sm16v1.R.id.gobutton);
         goButton.setText(current_detail_going==0 ? " Mark " : "UnMark");
 
-        dialog.setTitle(title);
+        // dialog.setTitle(title);
 
         // set the custom dialog components - text, image and button
-        //TextView titletext = (TextView) dialog.findViewById(R.id.title);
-        //titletext.setText(title);
+        // Now using own title element rather than the standard Android one, as cann gain more control of colour and size, and will work on newer versions onf android which use a different name internally for the totle.
+        TextView titletext = (TextView) dialog.findViewById(R.id.mytitle);
+        titletext.setText(title);
 
-        TextView text = (TextView) dialog.findViewById(R.id.text);
+        TextView text = (TextView) dialog.findViewById(uk.co.summermadness.sm16v1.R.id.text);
         text.setText(message);
 
-        ImageView image = (ImageView) dialog.findViewById(R.id.image);
+        ImageView image = (ImageView) dialog.findViewById(uk.co.summermadness.sm16v1.R.id.image);
         if (imageId == -1) {
             // GONE removes the space, whereas Invisible keeps the empty space.
             image.setVisibility(View.GONE); // or: image .setVisibility(View.INVISIBLE);
@@ -1918,12 +1993,23 @@ public void firebase_cloud_messenging()
         // now keeping a reference to dialog in the MainActivity class so can that is it is showing.
         if (dialog==null) {
             dialog = new Dialog(context);
-            dialog.setContentView(R.layout.mydialog);
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE); // Hide the android title. This needs to be before setContent()
+            dialog.setContentView(uk.co.summermadness.sm16v1.R.layout.mydialog);
 
+            /*
             TextView titleText = (TextView) dialog.findViewById(android.R.id.title);
-            titleText.setSingleLine(false); // To enable multi-line title.
+            // Need to check if null, as from the Frebase crash reports this causes a crash: Exception java.lang.NullPointerException: Attempt to invoke virtual method 'void android.widget.TextView.setSingleLine(boolean)' on a null object reference
+            // So trying this from: http://stackoverflow.com/questions/29161994/how-to-get-the-alertdialog-title
+            // Internally they use R.id.alertTitle
+            int titleId = getResources().getIdentifier( "alertTitle", "id", "android" );
+            if (titleId > 0) {
+                titleText = (TextView) dialog.findViewById(titleId);
+            }
+            if (titleText!=null) {titleText.setSingleLine(false);} // To enable multi-line title.
+            */
 
-            Button okButton = (Button) dialog.findViewById(R.id.okbutton);
+
+            Button okButton = (Button) dialog.findViewById(uk.co.summermadness.sm16v1.R.id.okbutton);
             // if button is clicked, close the custom dialog
             okButton.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -1932,7 +2018,7 @@ public void firebase_cloud_messenging()
                 }
             });
 
-            Button nextButton = (Button) dialog.findViewById(R.id.nextbutton);
+            Button nextButton = (Button) dialog.findViewById(uk.co.summermadness.sm16v1.R.id.nextbutton);
             // if button is clicked, show next in list:
             nextButton.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -1956,12 +2042,12 @@ public void firebase_cloud_messenging()
 
         }
 
-        Button goButton = (Button) dialog.findViewById(R.id.gobutton);
+        Button goButton = (Button) dialog.findViewById(uk.co.summermadness.sm16v1.R.id.gobutton);
         // if button is clicked, close the custom dialog
         goButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Button goButt = (Button) dialog.findViewById(R.id.gobutton);  // as complains if use goButton below:
+                Button goButt = (Button) dialog.findViewById(uk.co.summermadness.sm16v1.R.id.gobutton);  // as complains if use goButton below:
                 if (current_detail_going == 0) {
                     set_current_detail_to_going(1);
                     goButt.setText("UnMark");
@@ -2052,7 +2138,7 @@ public boolean appendToFile(String str) {
 
         NotificationCompat.Builder mBuilder =
                 (NotificationCompat.Builder) new NotificationCompat.Builder(this)
-                       .setSmallIcon(R.mipmap.ic_launcher) // // R.drawable.notification_icon
+                       .setSmallIcon(uk.co.summermadness.sm16v1.R.mipmap.ic_launcher) // // R.drawable.notification_icon
                        .setContentTitle(title)
                        .setContentText(text)
                        .setPriority(priority); // five priority levels, ranging from NotificationCompat.PRIORITY_MIN (-2) to PRIORITY_MAX (2); if not set, the priority defaults to PRIORITY_DEFAULT (0)

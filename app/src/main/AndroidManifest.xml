@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="uk.co.summermadness.sm16">
+    package="uk.co.summermadness.sm16v1">
 
     <!-- This min sdk is also declared in gradle.build -->
     <!-- Removed:  com.google.android.gms.gcm,  -->
@@ -41,7 +41,7 @@
     <!-- Added the SmApp name below - as Activity class is needed by batch -->
     <!-- Theme was:    android:theme="@style/Theme.AppCompat.Light.NoActionBar" -->
     <!-- But using: @style/AppTheme gave debug error and crash:
-    java.lang.RuntimeException: Unable to start activity ComponentInfo{uk.co.summermadness.sm16/uk.co.summermadness.sm16.MainActivity}: java.lang.IllegalStateException:
+    java.lang.RuntimeException: Unable to start activity ComponentInfo{sm16v1v1/sm16v1v1.MainActivity}: java.lang.IllegalStateException:
     This Activity already has an action bar supplied by the window decor. Do not request Window.FEATURE_SUPPORT_ACTION_BAR and set windowActionBar to false in your theme to use a Toolbar instead.
     -->
 
@@ -59,7 +59,7 @@
             android:value="@integer/google_play_services_version" / -->
 
         <!-- Locking the screen orientation for simplicity for now, as otherwise need to rearrange the custom dialog layout  in code -->
-        <activity android:name=".MainActivity"
+        <activity android:name="uk.co.summermadness.sm16v1.MainActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait">
             <intent-filter>
@@ -83,7 +83,7 @@
         <!-- See: https://firebase.google.com/docs/cloud-messaging/android/client -->
         <!-- A service that extends FirebaseMessagingService. This is required if you want to do any message handling beyond receiving notifications on apps in the background. To receive notifications in foregrounded apps, to receive data payload, to send upstream messages, and so on, you must extend this service.  -->
         <service
-            android:name=".MyFirebaseMessagingService">
+            android:name="uk.co.summermadness.sm16v1.MyFirebaseMessagingService">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT"/>
             </intent-filter>
@@ -93,7 +93,7 @@
         <!-- A service that extends FirebaseInstanceIdService to handle the creation, rotation, and updating of registration tokens. This is required for sending to specific devices or for creating device groups. -->
 <!-- Disabled the ID service as currently sending notifications to all users that subscribed to a topic -->
         <service
-            android:name=".MyFirebaseInstanceIDService">
+            android:name="uk.co.summermadness.sm16v1.MyFirebaseInstanceIDService">
             <intent-filter>
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/>
             </intent-filter>

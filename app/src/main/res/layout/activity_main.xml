@@ -7,7 +7,7 @@
     android:layout_width="wrap_content"
     android:layout_height="match_parent"
     android:layout_gravity="center_horizontal"
-    tools:context="uk.co.summermadness.sm16.MainActivity">
+    tools:context="uk.co.summermadness.sm16v1.MainActivity">
 
     <!-- With the new Toolbar you can apply a style and a theme. They are different! The style is local to the Toolbar view, for example the background color. The app:theme is instead global to all ui elements inflated in the Toolbar, for example the color of the title and icons. -->
     <android.support.v7.widget.Toolbar

@@ -4,14 +4,16 @@
     android:layout_height="fill_parent"
     android:padding="5dip">
 
-    <!--TextView
-        android:id="@+id/title"
+    <!-- item name="android:windowNoTitle">true</item -->
+
+    <TextView
+        android:id="@+id/mytitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:text="Large Text"
         android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"/-->
+        android:layout_centerHorizontal="true"/>
     <!--
     android:layout_width="fill_parent"
         android:layout_alignTop="@+id/textView"
@@ -23,11 +25,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginRight="5dip"
-        android:layout_alignParentTop="true"
+        android:layout_below="@+id/mytitle"
         android:layout_centerHorizontal="true"
         />
 <!--
 android:layout_below="@+id/title"
+or:
+android:layout_below="@+id/imageMenu"
 
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
@@ -52,6 +56,7 @@ android:layout_below="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/image"
+        android:layout_above="@+id/gobutton"
         />
     <!--  android:autoLink="web"   Sets whether the movement method will automatically be set to LinkMovementMethod if setAutoLinkMask(int) has been set to nonzero and links are detected in setText(char[], int, int). -->
     <!-- mcan add others, eg: android:autoLink="email|phone|web" -->

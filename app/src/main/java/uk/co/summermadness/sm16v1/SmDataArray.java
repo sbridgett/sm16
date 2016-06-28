@@ -1,4 +1,4 @@
-package uk.co.summermadness.sm16;
+package uk.co.summermadness.sm16v1;
 
 /**
  * Created on 08/06/2016.
@@ -15,7 +15,8 @@ public final class SmDataArray {
     // In case you want a String in strings.xml or an identifier of a UI element, substitute "drawable"
     // int resourceId = this.getResources().getIdentifier("nameOfResource", "id", this.getPackageName
 
-    public static final int dataVersion = 1;
+    
+    public static final int dataVersion = 3;  //Also change my app version when uploading to app store
     public static final String inboxChapter = "3", inboxTitle = "Inbox";  // This inboxPage value is used for adding the notifications in MainActivity.add_notification_to_inbox(..)
 
     public static final String[][] data = new String[][]{
@@ -36,8 +37,18 @@ public final class SmDataArray {
                     +"\nOn this popup dialog, you can click buttons to:\n(a) \"Close\" the dialog,\n(b) \"Mark\" or \"UnMark\" (which will show that item in blue background on the list, so you can mark item to read it again later or go to that event).\n(c) \"Next\" button to display the next item in the list."
                     +"\n\nFrom a subpage list, to return to the main \"SM16 Contents\" page, either press your phone’s \"Back\" button (usually at bottom left of the phone), or touch the back arrow at the top-left of the app."
                     +"\n\nThe \"Inbox\" item will contain notification messages, eg. programme or venue changes. To be able to receive these notifications you need a phone with Android version 2.3 or later, a working Play Store app (that you normally use to install apps), and a mobile data or WiFi connection."
+                    +"\n\nThe photos and text in this app are copyright of Summer Madness."
                     +"\n\nSM16 App version: 0.6.23, 23-June-2016",
                     ""
+//                    "SM16 Contents" page is main menu to the sub-pages. Tap one of these (eg. "Welcome") to display a sub-list about that item.
+//                    The items on the sub-page list are initially in bold text, and will turn to plain text when tap a line you view the details for that item.
+//     On the details popup page, you can click buttons to:
+//            (a) "Close" the page,
+//    (b) "Mark" (or "UnMark") which highlights that item in yellow on the list, to remind you to read it later or go to that event.
+//            (c) "Next" button to display the next item in the list.
+//    From a subpage list, to return to the main "SM16 Contents" page, either press your phone’s "Back" button (usually at bottom left of the phone), or touch the back arrow at the top-left of the app.
+//                    To receive these notifications you need a phone with Android version 2.3 ("Gingerbread" released Dec 2010) or later, a working Play Store app (that you normally use to install apps), and a mobile data or WiFi connection.
+
                     // + "and \"Forward arrow\" icons in the menu bar at top right can be used to move between the pages."
                     // +"\n\nThe \"Back arrow\", and \"Forward arrow\" icons in the menu bar at top right can be used to move between the pages."
                     // +"\nOr you can select page from the drop-down menu by pressing the three vertical dots at the top-right"
@@ -48,7 +59,7 @@ public final class SmDataArray {
                     + "\nWe’ll also have the second ever Summer Madness, \"It’s a Knockout\" competition."
                     + "\nBack by popular demand is the sailing and canoeing in the harbour."
                     + "\nIn the Wigwam, where there will also be giant garden games to give you an easy excuse to act like a child - again!",
-                    String.valueOf(R.drawable.activities_130)
+                    String.valueOf(uk.co.summermadness.sm16v1.R.drawable.activities_130)
             },
             {"1.04", "A Typical Day of Madness",   "If you find yourself asking the question, ‘What does a day in the life of Summer Madness’ look like well here’s the answer…", ""},
             {"1.05", "8am",   "Emerge from your tent well rested and ready for the day. While you make use of the hot showers available in sub camp your group leader will prepare a nutritious breakfast to help fuel your day (If you follow your nose though you might make your way to the Christian Aid tent and treat yourself to a bacon buttie).", ""},
@@ -109,13 +120,13 @@ public final class SmDataArray {
             // 4: Speakers & Venues:
             {"4", "Speakers & Venues", "red", ""},
             {"4.01", "Bluetree - worship",   "@bluetreeband\nComing from Belfast, Bluetree have been leading worship around the world since 2005 and are passionate about worship and justice. They are committed to pouring everything into building up the church for the glory of God and we’re delighted to be partnering with them at this year’s festival.",
-                    String.valueOf(R.drawable.bluetree_130)},
+                    String.valueOf(uk.co.summermadness.sm16v1.R.drawable.bluetree_130)},
             {"4.02", "Stephen Mayes & Band - worship",   "@stephen7m\nStephen is married to Abby and lives in Belfast. He is a worship leader with New Wine Ireland and this August will be joining Re:Hope Church to launch a new campus in the heart of Belfast City Centre. Stephen and his band desire to see people connect to the Father’s heart in worship by facilitating an atmosphere that encourages joy, intimacy and freedom to fully embrace the presence of the living God.",
-                    String.valueOf(R.drawable.stephen_mayes_130)},
+                    String.valueOf(uk.co.summermadness.sm16v1.R.drawable.stephen_mayes_130)},
             {"4.03", "Rachel Hughes - speaker",   "@rachelemhughes\nRachel Hughes is married to Tim and they have 4 young children. They have recently moved from London (Holy Trinity Brompton/Alpha) where Rachel was involved in leading women’s ministry and teaching. Tim & Rachel have just moved to Birmingham and planted a new church there (St. Luke’s Gas Street).",
-                    String.valueOf(R.drawable.rachel_hughes_130)},
+                    String.valueOf(uk.co.summermadness.sm16v1.R.drawable.rachel_hughes_130)},
             {"4.04", "Matt Summerfield - speaker",   "@livelife123org\nMatt Summerfield balances his time between being the Chief Executive of Urban Saints and the Senior Pastor of Hitchin Christian Centre. He is the founder of the lifelive123.org – a new movement of people committed to intentional, accountable disciple-making relationships. He loves Haagen Daaz Belgian Chocolate ice cream, meat feast pizzas and great movies.",
-                    String.valueOf(R.drawable.matt_summerfield_130)},
+                    String.valueOf(uk.co.summermadness.sm16v1.R.drawable.matt_summerfield_130)},
             {"4.05", "Adrian McCartney - speaker",   "@adrianmccartney\nAdrian is the leader of Boring Wells, a family of missional communities in Belfast. Together with his wife Janice and their three children, he has been pioneering new ways of church for over 20 years. Despite being a man of deep thought and unconventional wisdom, he also has a stunning left foot on the 5-a-side football pitch.",
                     ""},
             {"4.06", "Stu Bothwell - speaker",   "@stubothwell\nStuart is 28 and married to the lovely Emma. Together, they live in East Belfast and are passionate about seeking the flourishing of the city. Stuart has recently joined the team at Summer Madness and CATALYST. There’s little Stuart loves more than sharing meals with friends both old and new. He is constantly searching for new music to wrap his ears around.",
@@ -131,23 +142,53 @@ public final class SmDataArray {
                     ""},
             // was from SM website:  "Tearfund is a Christian international aid and development agency working globally to end poverty and injustice, and to restore dignity and hope in some of the world’s poorest communities. The Tearfund Café is located in the first courtyard and is a great place to hang out, learn more about their work and buy hot drinks and baked goods from Belfast-based coffee shop and social enterprise, Common Grounds.",
 
-            {"4.09", "DNA Tent",   "DNA Tent is back again this year. The venue is a living exploration of what Ireland is, what we are called to be, and how God wants us to heal. It is a snapshot of God’s redemptive purpose for this island. Along with our small coffee pod will be a venue that is staffed by a team of committed workers from Urban Saints. We’re here to chat, pray and hangout. Come and see what we’re doing all over Ireland. Come and decorate our mural of hope and use it to pray for the land. Come and reflect on our call to be a light to the nations, Sign up for personal prayer from our team who will pray for your original design. What is your spiritual DNA from conception? Use your creativity!", ""},
-            {"4.10", "24/5 Prayer Room",   "The prayer room is a creative and interactive space for you to come and spend time chatting with God through words, art, music, activity and silence. Our desire is that the prayer room will be a place where you meet with God, where you can process what God is saying to you throughout the festival and pray big prayers for your family, friends, church and the nation!", ""},
-            {"4.11", "The Campus",   "....................", ""},
-            {"4.12", "Seminar One",   "Located near entrance gate ....", ""},
-            {"4.13", "Seminar Two",   "Located near entrance gate ....", ""},
-            {"4.14", "Seminar Three",   "Located near entrance gate ....", ""},
-            {"4.15", "CIYD Connect",   "Imagine a space of calm among the Madness. If you are a youth leader, youth worker, committed in your role among young people and you are craving a quiet space to escape the Madness, feel free to drop in, flop into a comfy sofa, enjoy FREE coffee and freshly baked goods. Whilst all goodies are free any donations made will go towards the Twin a Tent campaign for refugee crisis. CIYD welcomes you and your team to enjoy the comfort and calm of this little space.", ""},
-            {"4.16", "YFC Drop-In",   "Every afternoon and evening you will be able to pop into the venue and enjoy a game of pool or table tennis, have a go on the X-box or PS4; or just hang out and have a cuppa with one of the YFC Team. Throughout the day, there will also be various competitions and events for those of you who are up for the challenge and in the evening you can spend some time relaxing on one of the sofa’s and enjoy some live music from various local artists. Cage football will be located outside the YFC Drop In.", ""},
+            {"4.09", "DNA Tent -Urban Saints",   "DNA Venue is back again for another year. Our prayer is that the venue is a living exploration of what Ireland is, what we are called to be, and how God wants us to heal. It is a snapshot of God’s redemptive purpose for this island."
+                    +"\nCome and enjoy a FreakShake in our hospitality area that is staffed by a team of committed volunteers from Urban Saints. We are here to chat, pray and hangout."
+                    +"\nAt Urban Saints it is our belief that the Christian faith works today and that Jesus Christ was speaking the truth when He said that \nHe offers the very best, most fulfilling life. To this end, our passion is to see young people…"
+                    +"\n -Come to faith, and then share that faith with others"
+                    +"\n -Experience the greatest hope, and then become bringers of that hope to their peers"
+                    +"\n -Respond to the love of God, and then become activists in their world through the practical demonstration of that love. Come and see what we’re doing all over Ireland."
+                    +"\nWe are delighted this year to have The Beat Emporium hosting our evening programme which promises to be epic. In addition there is an opportunity to sign up for DJ workshops (come to venue to find out more)."
+                    +"\nCome and listen to a series of seminars that will open up discussion and vision how we can be Jesus to Ireland in 2016",
+                    ""},
+            // was:  DNA Tent is back again this year. The venue is a living exploration of what Ireland is, what we are called to be, and how God wants us to heal. It is a snapshot of God’s redemptive purpose for this island. Along with our small coffee pod will be a venue that is staffed by a team of committed workers from Urban Saints. We’re here to chat, pray and hangout. Come and see what we’re doing all over Ireland. Come and decorate our mural of hope and use it to pray for the land. Come and reflect on our call to be a light to the nations, Sign up for personal prayer from our team who will pray for your original design. What is your spiritual DNA from conception? Use your creativity!", ""},
+            {"4.10", "24/5 Prayer Room", "Right now different people, from different nations all around the world are praying in 24-7 prayer rooms in all sorts of different locations! Churches, schools, prisons and high streets to give just a quick sample. So why should Summer Madness be any different? During the festival we’ll be praying from 8am to midnight (we know, not quite 24 hours!)"
+                    +"\nThe prayer room is a creative and interactive space for you to come and spend time chatting with God through words, art, music, activity and silence. Our desire is that the prayer room will be a place where you can meet with God, where you can process what He is saying to you throughout the festival and pray big prayers for your family, friends, church and the nation!"
+                    +"\nYou are so welcome to make use of the prayer room. Sign yourself up for a slot and get along with God or gather up some of your friends and come spend an hour praying for one another and seeking God."
+                    +"\nThe prayer room will be closed during the Main Stage Sessions. There are two entrances to the prayer room; one through the Campus venue and one via the building attached the Campus courtyard."
+                    +"\nFor more information on prayer rooms or 24-7 Prayer, please call in and say hello to us during the festival or check out our website: 24-7prayerireland.com",
+//  was:                  "The prayer room is a creative and interactive space for you to come and spend time chatting with God through words, art, music, activity and silence. Our desire is that the prayer room will be a place where you meet with God, where you can process what God is saying to you throughout the festival and pray big prayers for your family, friends, church and the nation!",
+                    ""},
+            {"4.11", "The Campus",   "Campus is a brand new venue for Summer Madness 2016!\n"
+                    +"\n\nRun by the Church of Ireland, Methodist and Presbyterian Chaplaincies at Queen’s University, there’s a great selection of drinks, milkshakes, lunches, ice-cream and plenty of folk around to ensure you’re well looked after."
+                    +"\n\nWe have space to chill and take time-out from the busy festival and also space to join the banter with our amazing line-up of live entertainment each evening."
+                    +"\n\nPop in and say hello! We would love to see you!", ""},
+            {"4.12", "Seminar One",   "We have three dedicated venues at this year’s festival. These are spaces to learn and gain some insight on various topics and areas."
+                    +"\n\nSeminar One is our biggest seminar venue and is located diagonally across from the Tearfund venue."
+                    +"\n\nOn Saturday, Sunday and Monday evenings, Seminar One will be open for late night worship from 23.00", ""},
+            {"4.13", "Seminar Two",   "Seminar Two is a dedicated seminar space situated beside the Tearfund venue.", ""},
+            {"4.14", "Seminar Three",   "Seminar Three is a dedicated seminar space situated beside the tea room where you can enjoy great food from our friends at The Fatted Calf all festival long!"
+                    +"\n\nYouth Leaders: Don’t forget to sign up your group for The Fatted Calf evening meal deal. Speak to The Fatted Calf for more details.", ""},
+            {"4.15", "CIYD Connect",   "Church of Ireland youth Department\n\nImagine a space of calm amongst the Madness. If you are a youth leader, youth worker, committed in your role among young people and you are craving a quiet place to escape, feel free to drop in, flop into a comfy sofa, enjoy FREE coffee and freshly baked goods. CIYD welcomes you and your team to enjoy the comfort and calm of this great space.",
+            // was from SM website:             "Imagine a space of calm among the Madness. If you are a youth leader, youth worker, committed in your role among young people and you are craving a quiet space to escape the Madness, feel free to drop in, flop into a comfy sofa, enjoy FREE coffee and freshly baked goods. Whilst all goodies are free any donations made will go towards the Twin a Tent campaign for refugee crisis. CIYD welcomes you and your team to enjoy the comfort and calm of this little space.",
+                    ""},
+
+            {"4.16", "YFC Drop-In", "Back by popular demand, we are very excited to have Youth for Christ Northern Ireland (YFCNI) join us again with their fully equipped pop-up drop-in centre. Youth for Christ Northern Ireland (YFCNI) are specialists in running local drop-in centres for young people across Northern Ireland, and invite you to come along and enjoy some drop-in banter during the festival."
+                    +"\n\nEvery afternoon and evening you will be able to pop into the venue and enjoy a game of pool or table tennis, have a go on the X-box or PS4, grab a snack from the Tuck-Shop; or just hang out and have a chat with one of the YFC Team."
+                    +"\n\nThroughout the day, there will also be various competitions and events for those of you who are up for the challenge and in the evening you can spend some time relaxing on one of the sofa’s and enjoy some live entertainment from various local artists."
+                    +"\n\nYFCNI will also be running a number of alternative worship events on Saturday and Sunday evening, and again on Monday morning. As part of these sessions, the wonderful Scott Evans, Church of Ireland chaplain to University College Dublin, will be joining the team and sharing some of his experiences, his love for Jesus and why he believes we are “Made for More”."
+                    +"\n\nFor more information on the alternative worship events, please speak to one of the YFC Team.",
+    //        "Every afternoon and evening you will be able to pop into the venue and enjoy a game of pool or table tennis, have a go on the X-box or PS4; or just hang out and have a cuppa with one of the YFC Team. Throughout the day, there will also be various competitions and events for those of you who are up for the challenge and in the evening you can spend some time relaxing on one of the sofa’s and enjoy some live music from various local artists. Cage football will be located outside the YFC Drop In.",
+                    ""},
             // {"4.17", "The Woodland Cafe",   "The Woodland Cafe isn’t quite in the Woodland anymore, but hey! We still like the name! The good news is that we are right beside the food vendors, so if you are looking some shelter from the blistering sunshine or the odd light drizzle, this is the place for you. Run by the Methodist, Church of Ireland and Presbyterian Chaplaincies at Queen’s University, there’s a great selection of drinks, snacks, milkshakes and ice cream and plenty of folk around to ensure you’re well looked after. Somewhere to chill or take timeout from the busy festival.", ""},
 
             // 5: Friday
             {"5", "Friday", "green", ""},
             {"5.01", "7pm -Mainstage Worship -Big Top",   "Speaker: Stu Bothwell\nWorship: Bluetree\n\nDoors of Big Top open at 6.30pm\nLive-streamed into Mainstage Overflow in Tearfund Cafe\n\nEnds: 9pm", ""},
-            {"5.02", "9:15pm -Tom McConnell -DNA Tent",   "Ends: 10:30pm", ""},
-            {"5.03", "9:15pm -DJ Billy Fyffe -The Campus",  "Ends: 10:30pm", ""},
-            {"5.04", "11pm -Late Night Worship -Seminar One",   "Ends: 11:45pm", ""}, // was: Jamie Neish
-
+            {"5.02", "9:15pm -Tom McConnell -DNA Tent", "Hailing from our shores Tom now lives in London with his wife Alanah. He is a guitar-pickin’ moustache enthusiast with a penchant for songsmith-ery and singing ‘woah-oh-oh’.\n\nEnds: 10:30pm", ""},
+            {"5.03", "9:15pm -DJ Billy Fyffe -The Campus",  "A long time favourite at Madness! DJ Billy will be smashing out the big tunes at our opening night disco in Campus.\n\nEnds: 10:30pm", ""},
+            // not on main programme, just in YFC page: {"5.04", "10pm -Ben Rayot -YFC Drop In", "Join the team as they welcome one of France’s greatest exports in the form of magician Ben Rayot. His silky smooth accent, warm charm, stunning magic and lovely facial hair will have you entranced! You are in for a unique and memorable evening.", ""},
+            {"5.05", "11pm -Late Night Worship -Seminar One",   "Ends: 11:45pm", ""}, // was: Jamie Neish
 
             // 6: Saturday
             {"6", "Saturday", "green", ""},
@@ -159,49 +200,54 @@ public final class SmDataArray {
                     +"\n\nEnds: 1pm", ""},
             {"6.05", "12pm -Song Writing Workshop -The Campus",   "Daniel Duke & Tom McConnell\n\nEnds: 1pm", ""},
             {"6.06", "1pm -Tom McConnell -Outdoor Stage",   "Ends: 2pm", ""},
-            {"6.07", "1pm -Sullivan & Gold -The Campus",   "Ends: 2pm", ""},
+            {"6.07", "1pm -Sullivan & Gold -The Campus",   "Flying in especially to join us for the weekend we can’t wait for you to see Sullivan & Gold.\n\nEnds: 2pm", ""},
 
             {"6.08", "2pm -Spiritual Disciplines: INWARD -CIYD Connect",   "CIYD Team\nPart One. Join the CIYD team and young people as they share TED-style talks on how we can get UP CLOSE + PERSONAL with God through developing Spiritual Disciplines. In Part One, they’ll be exploring disciplines that engage the heart.\n\nEnds: 3pm", ""},
             {"6.09", "2pm -Islam and Isis: Your Questions answered -Seminar Two",   "Jim Stewart (EA) and Abdul Azim\nDo you understand what Muslims really believe, why Isis exists or the reasons for much of the conflict between Islam and Chrisitianity? Join Jim Stewart (Evangelical Alliance) and Abdul Azim from Cardiff who have pioneered a new approach to interfaith relationships to discuss openly some of the challenges and misperceptions that abound in modern Britian and Europe.\n\nEnds: 3pm", ""},
             {"6.10", "2pm -Soul Sista: Secret Royals -Seminar One" ,   "Jill Boyd.\nGod is calling us to wake up and understand exactly who we are. The challenge is to live higher, like the royal girls we truly are. This kingdom is one of love, and it’s supposed to have an impact in our lives and the people around us. Let’s not simply fit into the current culture and its ways. We are called to so much more - but what does that look like?\n\nEnds: 3pm", ""},
-            {"6.11", "2pm -Making Disciples Who Make Disciples -DNA Tent",   "Matt Summerfield & Wilson Beare, Urban Saints\nPractical tips on the who, how and what of disciple-making? How to partner with God in the greatest joy of all - seeing someone’s life transformed!\n\nEnds: 3pm", ""},
+            {"6.11", "2pm -Making Disciples Who Make Disciples -DNA Tent",   "Matt Summerfield & Wilson Beare, Urban Saints\n\nPractical tips on the who, how and what of disciple-making? How to partner with God in the greatest joy of all - seeing someone’s life transformed!\n\nEnds: 3pm", ""},
             {"6.12", "2pm -Mad Men: Falling in Love or Lust -Seminar Three",   "Niall McNally\nNiall speaks to the social awkwardness of our teenage years. How to navigate hormones, the sexualisation of culture and the issues of the heart. Niall’s honesty is refreshing and disarming, all peppered with a good dose of humour to help us not take ourselves too seriously.\n\nEnds: 3pm", ""},
 
             {"6.13", "3:15pm -Leadership: Rhythms & Rest -CIYD Connect",   "Stu Bothwell\nIt’s been said that busyness is the enemy of spirituality. For us as leaders, weighed down by our responsibilities, dreams and to-do-lists, this statement can offend us. However, in our busy and distracted age, it’s important for us to develop a healthy rhythm of life. Join Stu as he explores these issues.\n\nEnds: 4.15pm", ""},
-            {"6.14", "3:15pm -Global Outreach Day: Be a part of it -The Campus",   "Jasper Rutherford\nWhat if 100,000 people across Ireland shared their faith in Jesus together on one day? On 27th May 2017 that is going to happen. Come and hear how you and your Church can be involved in Global Outreach Day.\n\nEnds: 4:15pm", ""},
+            {"6.14", "3:15pm -Global Outreach Day: Be a part of it -The Campus",   "Jasper Rutherford\n\nWhat if 100,000 people across Ireland shared their faith in Jesus together on one day? On 27th May 2017 that is going to happen. Come and hear how you and your Church can be involved in Global Outreach Day.\n\nEnds: 4:15pm", ""},
+            // From 'The Campus' section of SM guide: On 27th May 2017 100,000 are going to share their faith across Ireland. Come and hear how you and your Church can be involved in Global Outreach Day
             {"6.15", "3:15pm -But What can I Do? -Seminar Two",   "Hannah Douglas, Tearfund\nAs we watch our TV screens and follow the news, we are bombarded daily with the injustice there is in our world today. As young people question our response to hunger, poverty, refugees and disasters, we are required to wrestle with them in their questioning. Hannah will be wrestling with some of these issues.\n\nEnds: 4:15pm", ""},
             {"6.16", "3:15pm -The Digital you -Seminar One",   "Niall McNally\nWith Snapchat, Facebook, Twitter & Instagram playing such a massive role in our lives today, in his seminar Niall will be shining some light on the bits of social media that we should double tap and the parts that we should double check. Expect emoticons.\n\nEnds: 4:15pm", ""},
             {"6.17", "3:15pm -Decommissioning Mindsets -DNA Tent",   "James Wilson & Dr. Gladys Ganiel\nEx-combatants from the British Army and Republican/Loyalist paramilitary organisations will discuss the impact of cultures of militarism on their lives. They will provide alternative narratives that challenge the glorification of violence in society and churches.\n\nEnds: 4:15pm", ""},
             {"6.18", "3:15pm -Friendship: I’ll be there for you -Seminar Three",   "Pete Waugh\nThe Book of Proverbs tells us that you won’t make it in life unless you are good at choosing, forging and keeping terrific friendships. In a world where we are increasingly connected with others this seminar will question how meaningful those connections are and discover what counts as true friendship.\n\nEnds: 4:15pm", ""},
 
-            {"6.19", "4:30pm -Preparing for University -The Campus",   "Barry Forde & Guests\nQueens University chaplain Barry Forde will introduce you to some of the basics of University life and give you a few tools to help navigate your way through in the most productive, satisfying and stimulating way possible!\n\nEnds: 5:30pm", ""},
+            {"6.19", "4:30pm -Preparing for University -The Campus",   "Barry Forde & Guests\nPreparing for the Brave New World of University?\nQueens University chaplain Barry Forde will introduce you to some of the basics of University life and give you a few tools to help navigate your way through in the most productive, satisfying and stimulating way possible!\n\nEnds: 5:30pm", ""},
+            // From The Campus section:  Barry will give you a few tools to help navigate your way through Uni
             {"6.20", "4:30pm -Responding to the Refugee Crisis -Seminar Two",   "MAP\nHow can we reach out and share the love of Jesus with the hundreds of thousands of refugees fleeing trouble, war and persecution? MAP share some stories of their experiences.\n\nEnds: 5:30pm", ""},
             {"6.21", "4:30pm -Does God Care What Nationality You Are? -Seminar One",   "Nicola Mallon (SDLP), Gavin Robinson (DUP), Chris Lyttle (Alliance), John Kyle (PUP)\nA panel of local political leaders discuss the relevance of nationality within a Christian worldview and modern European society.\n\nEnds: 5:30pm", ""},
-/////*            {"6.22", "4:30pm -Dance Workshop -DNA Tent",   "Vibe Academy\n\nEnds: 5:30pm", ""},
+            {"6.22", "4:30pm -Dance Workshop -DNA Tent",   "Vibe Academy\n\nSpecialising in hip hop and street dancing join Lisa and her team to pick up some new moves to bust out on the dance floor at the UV Party!\n\nEnds: 5:30pm", ""},
             {"6.23", "4:30pm -The Curse of Quiet Time: When Tools become Rules -Seminar Three",   "David Dunlop\nHow easy is it to tell the difference between being a slave to a regime and building helpful habits. David Dunlop shares his personal take on some of the most helpful ways of nurturing your soul and growing in intimacy with God.\n\nEnds: 5:30pm", ""},
 
             {"6.24", "7pm -Mainstage Worship -Big Top (doors open 6.30pm)",   "Speaker: Matt Summerfield\nWorship: Bluetree\n\nDoors of Big Top open at 6.30pm\n\nLive-streamed into Mainstage Overflow in Tearfund Cafe\n\nEnds: 9pm", ""},
-            {"6.25", "7pm -Alternative to Mainstage -YFC Drop In",   "Ends: 9pm", ""},
-            {"6.26", "9:15pm -Brash Isaac -The Campus",   "Ends: 10pm", ""},
-            {"6.27", "9:15pm -PTYK & Billy Fyffe Alphabet Disco - DNA Tent",   "\n\nEnds: 11pm", ""},
-            {"6.28", "10:15pm -Daniel Duke -The Campus",   "Ends: 11:15pm", ""},
+            {"6.25", "7pm -Alternative to Mainstage -YFC Drop In",   "Scott Evans\nYFC will be hosting a small scale event, as an alternative to the Mainstage. For more information on this event, please speak to any of the YFC Team.\n\nEnds: 9pm", ""},
+            {"6.26", "9:15pm -Brash Isaac -The Campus",   "Recently stepping into the spotlight from behind the drumkit of The New Ancestors. Get in early and you can say ‘you were there’ when he hits the big time\n\nEnds: 10pm", ""},
+            {"6.27", "9:15pm -PTYK & Billy Fyffe Alphabet Disco - DNA Tent",   "A long time favourite at Madness! DJ Billy will be smashing out the big tunes with his partner in crime PTYK. You don’t want to miss out!\n\nEnds: 11pm", ""},
+            {"6.28", "10:15pm -Daniel Duke -The Campus",   "You may recognise him from The Voice where his unique version of The Proclaimers ‘I’m Gonna Be(500 Miles) earned him three chair turns and a place on ‘Team Tom’\n\nEnds: 11:15pm", ""},
             {"6.29", "11pm -Late Night Worship -Siminar One",   "Ends: 11:45pm", ""},
 
+// YFC:
+// "Fantastic locally born duo, Sullivan and Gold will be performing live in the venue."
+// +"\n\nCome and enjoy an evening of fabulous music with songs that are bold, beautiful, atmospheric and emotive."
 
-             // 7: Sunday:
+    // 7: Sunday:
             {"7", "Sunday", "green", ""},
             {"7.01", "8am -Morning Bible study -The Campus",   "Simon Lennox\nEnds: 8:45am", ""},
             {"7.02", "8:45am -Group Time -Journal on page 55",   "\n\nEnds: 9:45am", ""},
             {"7.03", "10am -Mainstage Worship -Big Top (doors open 9.30am)",    "Speaker: Adrian McCartney\nWorship: Bluetree\n\nDoors of Big Top open at 9.30am\nLive-streamed into Mainstage Overflow in Tearfund Cafe\n\nEnds: 12pm", ""},
-            {"7.04", "12pm -Authentic Intimacy -Seminar Two",    "Worship Central\nThe team from Worship Central Ireland & N.Ireland will be exploring the challenge of sustaining intimacy with God while being committed to our involvement in worship ministry.\n\nEnds: 1pm", ""},
-            {"7.05", "1pm -Wildfire -The Campus",   "Ends: 2pm", ""},
+            {"7.04", "12pm -Authentic Intimacy -Seminar Two",    "Worship Central\nThe team from Worship Central Ireland & N. Ireland will be exploring the challenge of sustaining intimacy with God while being committed to our involvement in worship ministry.\n\nEnds: 1pm", ""},
+            {"7.05", "1pm -Wildfire -The Campus",   "Wildfire is a community of worshippers who come together to pursue the presence of God and the dreams he has for us.\n\nEnds: 2pm", ""},
             {"7.06", "1pm -Daniel Duke -Outdoor Stage",   "Ends: 2pm", ""},
 
             {"7.07", "2pm -Spiritual Disciplines: OUTWARD -CIYD Connect",   "CIYD Team\nPart Two. Join the CIYD team and young people as they share TED-style talks on how we can get UP CLOSE + PERSONAL with God through developing Spiritual Disciplines. In Part Two, they’ll be exploring disciplines that lead us into service and mission.\n\nEnds: 3pm", ""},
             // {"7.08", "2pm -*BLANK in programme* -The Campus",   "Ends: 3pm", ""},
             {"7.08", "2pm -UnLearn Prayer -Seminar Two",   "Matt Summerfield\nJust when you thought you understood what prayer was all about, Jesus invites us to think again about prayer in his most famous sermon of all. Join us for this session where we’ll explore what Jesus has to say about the true privilege, purpose, persistence and practices of life-giving prayer.\n\nEnds: 3pm", ""},
             {"7.09", "2pm -Soul Sista: My Royal Subjects -Seminar One",   "Jill Boyd\nThe kingdom we are part of has two basic principles - LOVE GOD & LOVE PEOPLE. No relationship we engage in should ever be unaffected by God’s way and His love. In a world that screams chaos and celebrates dysfunction - God has a better way. It usually doesn’t take that long in a room full of girls that the boy, love and relationship chat rears its head. Discover how a Kingdom Royal addresses these issues and more head on.\n\nEnds: 3pm", ""},
-            {"7.10", "2pm -Spirit Radio Workshop -DNA Tent",   "Ends: 3pm", ""},
+            {"7.10", "2pm -Spirit Radio Workshop -DNA Tent",   "\nCome along and discover how you can create content for radio.\n\nEnds: 3pm", ""},
             {"7.11", "2pm -Mad Men: Warm bodies -Seminar Three",   "Niall McNally\nHow to save your marriage before you meet your Spouse, not just a Porn free life, but a vision of love that champions and ushers in the kingdom of God. From a Fatherless generation to men who dare to love sex more than the world says it does. A Theology for your bodies & souls that prepares the Bride of Christ.\n\nEnds: 3pm", ""},
 
             {"7.12", "3:15pm -Sensitive Conversations : When It’s Hard to Talk About What Really Matters -CIYD Connect",   "Donchadh Greene\nWhat is it like to grow up in church in NI as a gay Christian and how do church leaders and youth workers deal with the pastoral and theological issues involved? Donnchadh Green shares some of his experiences with Rev. Barry Forde as they explore these highly charged and often contentious areas of church life and ministry. The seminar is aimed at youth leaders and those involved in the practical and pastoral outworking of a Biblical approach to sexuality in the midst of much public debate and scrutiny.\n\nEnds: 4.15pm", ""},
@@ -212,15 +258,17 @@ public final class SmDataArray {
 
             {"7.17", "4:30pm -More Than a Bad Day -Seminar Two",   "The Big House\nWhat is depression? Is it just having a bad day? Is it crying a lot? How can a Christian be depressed? In this seminar we will look at what the Bible has to say and hear a personal story as we explore what it means to be depressed, why someone might feel that way, and ways we can help a person going through it.\n\nEnds: 5:30pm", ""}, // David Cavan, Tearfund
             {"7.18", "4:30pm -Up Close & Personal with... -Seminar One",   "Michelle Scott, Rachel Hughes & Matt Summerfield\nThis is your chance to get UP CLOSE + PERSONAL with some of our mainstage speakers and great local leaders! Join Rachel, Matt and Michelle as they share personal stories of how they have encountered the UP CLOSE + PERSONAL God in the past and how they experience Him even in the busyness of their everyday lives.\n\nEnds: 5:30pm", ""},
-            {"7.19", "4:30pm -Dance Workshop -DNA Tent",   "Vibe Academy\n\nEnds: 5.30pm", ""},
+            {"7.19", "4:30pm -Dance Workshop -DNA Tent",   "Vibe Academy\nSpecialising in hip hop and street dancing join Lisa and her team to pick up some new moves to bust out on the dance floor at the UV Party!\n\nEnds: 5.30pm", ""},
             {"7.20", "4.30pm -Evangelism: Anyone Can Do It! -Seminar Three",   "Phil Timson\nEvangelism is a ‘no-brainer!’ It’s our responsibility to ‘Go and make disciples’ (Matt 20:20). This seminar will look at our call to evangelism and how we can best reach our mates for Jesus. Through exploring some key principles, be inspired and equipped to make sharing your faith, a natural part of everyday life.\n\nEnds: 5:30pm", ""},
 
             {"7.21", "7pm -Mainstage Worship -Big Top (doors open 6.30pm)",   "Speaker: Rachel Hughes\nWorship: Stephen Mayes\n\nDoors of Big Top open at 6.30pm\n\nLive-streamed into Mainstage Overflow in Tearfund Cafe\n\nEnds: 9pm", ""},
             {"7.22", "7pm -Alternative to Mainstage -YFC Drop In",   "Ends: 9pm", ""},
 
-            {"7.23", "9:15pm -Chris Wilson -The Campus",   "Ends: 10pm", ""},
-            {"7.24", "9:15pm -Mark Ferguson -DNA Tent",   "Ends: 10pm", ""},
-            {"7.25", "10:15pm -Hillspeak -DNA Tent",   "Ends: 11pm", ""},
+            {"7.23", "9:15pm -Chris Wilson -The Campus",   "An American transplant in Belfast, Christopher Wilson spent years refining his sound while touring in the US.\n\nEnds: 10pm", ""},
+            {"7.24", "9:15pm -Mark Ferguson -DNA Tent",   "Alongside his band, Mark has led worship across Ireland. We’re delighted he’s going to join us for a more relaxed set that will encourage and inspire authentic worship in your heart.Ends: 10pm", ""},
+            {"7.25", "10:15pm -Hillspeak -DNA Tent",   "Alexander, Nathaniel, Jacob and Chris are Hillspeak, a folk band from Dromore."
+                    +"\n\nAfter a great performance at last year’s festival and the release of their latest E.P. ‘Shapeshifter’, they’re back at Glenarm."
+                    +"\n\nExpect some serious foot stomping!\n\nEnds: 11pm", ""},
             {"7.26", "11pm -Late Night Worship -Siminar One",   "Ends: 11:45pm", ""},
 
 
@@ -230,10 +278,10 @@ public final class SmDataArray {
             {"8.02", "8:45am -Group Time -Journal on page 55",   "\n\nEnds: 9:45am", ""},
             {"8.03", "10am -Mainstage Worship -Big Top (doors open 9.30am)",   "Speaker: Adrian McCartney\nWorship: Stephen Mayes\n\nDoors of Big Top open at 9.30am\nLive-streamed into Mainstage Overflow in Tearfund Cafe\n\nEnds: 12pm", ""},
             {"8.04", "10am -Alternative to Mainstage -YFC Drop In",   "Ends: 12pm", ""},
-            {"8.05", "1pm -Beulah Kim -The Campus",   "Ends: 2pm", ""},
+            {"8.05", "1pm -Beulah Kim -The Campus",   "Beulah’s songs are funny, creative and thought provoking. You’ll find yourself singing her songs all the way home.\n\nEnds: 2pm", ""},
             {"8.06", "1pm -Jonny Solari -Outdoor Stage",   "Ends: 2pm", ""},
             //{"8.07", "1pm -Jamie Neish -DNA Tent",   "Ends: 2pm", ""},
-            {"8.07", "1:15pm -Illustrated Faith -DNA Tent",   "Ends: 2pm", ""},
+            {"8.07", "1:15pm -Illustrated Faith -DNA Tent",   "Join the team and enjoy exploring your faith creatively! Painting, lettering, collage, scrapbooking - It’s messy, it’s fun, it’s whatever you want it to be!\n\nEnds: 2pm", ""},
 
             {"8.08", "2pm -Spiritual Disciplines: CORPORATE -CIYD Connect",   "CIYD Team\nPart Three. Join the CIYD team and young people as they share TED-style talks on how we can get UP CLOSE + PERSONAL with God through developing Spiritual Disciplines. In Part Three, they’ll be exploring disciplines that we can engage in together.\n\nEnds: 3pm", ""},
             {"8.09", "2pm -When I Pray What Does God Do? -The Campus",   "Prof David Wilkinson\nScientist and theologian David Wilkinson shares his own struggles with the question of how God answers prayer in this Skype seminar. Science does not rule out God acting in the universe in surprising ways; the Bible shows a God who acts in the world in response to people’s prayers. Yet there is always a mystery about the nature and outcome of prayer, not least in the experience of unanswered prayer.\n\nEnds: 3pm", ""},
@@ -242,20 +290,20 @@ public final class SmDataArray {
 
             {"8.12", "3:15pm -Leading Yourself Before Leading Others -CIYD Connect",   "Rachel Hughes\nAs we serve others in leadership, we can often neglect ourselves and our relationship with Christ. We must prioritise an UP CLOSE + PERSONAL life with Christ, which enables us to lead others well. Join Rachel as she unpacks how we can lead ourselves before leading others.\n\nEnds: 4.15pm", ""},
             {"8.13", "3:15pm -Guidance: Hearing God Speak For Yourself -The Campus",   "Barry Forde\nSometimes we wish that God would just use a (very large) whiteboard and spell things out in a rather unmistakable way but that isn’t always the case for most of us. So Barry Forde will ‘guide’ us through the ways in which we might become more attentive to God’s prompting and examine how that could impact our decision making processes – especially the big ones!\n\nEnds: 4.15pm", ""},
+
             {"8.14", "3:15pm -The Church Around the Corner -Seminar Two",   "Tom Stewart, Cinnamon Network\nHow well does your church reach out to the local community sharing God’s love in practical ways? YOU have the chance to receive £2000 towards your own efforts to do just that. This year we are in a VERY fortunate position to be able to receive 10 such grants for Summer Madness groups. Come along and speak to the experts about how to get started and develop a successful project.\n\nEnds: 4.15pm", ""},
             {"8.15", "3:15pm -Real Families -Seminar One",   "The Big House\nThere is no such thing as a perfect family, just real families. The reality of family life is this: it can be good, difficult, fun, and complicated but it’s never perfect! This seminar will explore what God has for us within our experience of family drawing on Biblical examples of imperfect families.\n\nEnds: 4.15pm", ""},
             {"8.16", "3:15pm -Five Ways to shape Your Culture -DNA Tent",   "Emma Worrall, Open Doors\nFed up of being shaped by a culturethat says we’ll never be good enough, fit enough, rich enough or successful enough? How can we change it? How can we shape it to better reflect Jesus centred values of hope, forgiveness and love? Come and hear five suggestions, drawn from Christians living in places where following Jesus is outlawed, and where standing up for him can mean beatings, arrest and worse.\n\nEnds: 4.15pm", ""},
             {"8.17", "3:15pm -Walking Free From Drug Addiction -Seminar Three",   "John Edwards\nFor 20 years, John Edwards was a drug addict and alcholic. Yet he encountered the UP CLOSE + PERSONAL God and his life was transformed. Now free, clean and sober for 23 years, John shares his powerful story and exposes the danger of addiction.\n\nEnds: 4.15pm", ""},
-
-            {"8.18", "4:30pm -Can We Talk?... Will You Listen? -The Campus",   "Sharon Hamill featuring John Alderdice, Emma Rothwell & Alain Emerson\nAre you keen to bring your questions regarding Christian faith in current culture to those in Christian leadership and discuss among your peers? Do you have a vision for the Church in the future? You are invited to a UNIQUE gathering where young people will be central to the conversation. Young people will lead and facilitate your questions, thoughts, opinions and ideas across a panel of young people and those in Church Leadership.\n\nEnds: 5:30pm", ""},
+            {"8.18", "4:30pm -Can We Talk?... Will You Listen? -The Campus",   "Sharon Hamill featuring John Alderdice, Emma Rothwell & Alain Emerson\n\nAre you keen to bring your questions regarding Christian faith in current culture to those in Christian leadership and discuss among your peers? Do you have a vision for the Church in the future? You are invited to a UNIQUE gathering where young people will be central to the conversation. Young people will lead and facilitate your questions, thoughts, opinions and ideas across a panel of young people and those in Church Leadership.\n\nEnds: 5:30pm", ""},
             {"8.19", "4:30pm -When Life Gets Difficult -Seminar Two",   "Up Close + Personal with Suffering in Society\nMAP\nThis seminar will look at a biblical view of the sanctity and value of life. It will explore challenges in society in how this biblical view is being eroded and challenged with various issues such as abortion and assisted dying. Together we will look at how to respond to these issues.\n\nEnds: 5:30pm", ""},
 
             {"8.20", "4.30pm -New Christians -Seminar Three",   "Following Jesus After Madness\nNeville Barnes\nThe Christian walk is supposed to be just that - a walk! Making a decision to follow Jesus is just the start. This seminar is to help you grow in your relationship with God when you get back home. It’s a must if you have come to faith at the festival and for youth workers if young people in your group have come to faith.\n\nEnds: 5:30pm", ""},
             {"8.21", "4:30pm -Opening Up The Bible -DNA Tent",   "Precept Ministries\nAre you a youth leader trying to encourage your young people to open their bibles? Precept Ministries work through some simple skills to help you with this. Their CSI style inductive Bible study will leave you with plenty of ideas for the year ahead.\n\nEnds: 5.30pm", ""},
 
             {"8.22", "7pm -Mainstage Worship -Big Top (doors open 6.30pm)", "Speaker: Rachel Hughes\nWorship: Stephen Mayes\n\nDoors of Big Top open at 6.30pm\n\nLive-streamed into Mainstage Overflow in Tearfund cafe\n\nEnds: 9pm", ""},
-            {"8.23", "9:15pm -David Walker -The Campus",  "Ends: 10pm", ""},
-            {"8.24", "9:15pm -PTYK UV Party -DNA Tent",   "Ends: 11pm", ""},
+            {"8.23", "9:15pm -David Walker -The Campus",  "David Walker & Bea Stewart\n\nThis song writing duo from Belfast are fresh on the scene and ready to mix it with the Summer Madness crowd!\n\nEnds: 10pm", ""},
+            {"8.24", "9:15pm -PTYK UV Party -DNA Tent",   "One DJ, lots of big tunes.\n\nEnds: 11pm", ""},
             {"8.25", "11pm -Late Night Worship -Siminar One",   "Ends: 11:45pm", ""},
 
 

@@ -1,4 +1,4 @@
-package uk.co.summermadness.sm16;
+package uk.co.summermadness.sm16v1;
 
 import android.app.Application;
 import android.content.SharedPreferences;
@@ -11,12 +11,6 @@ import android.content.SharedPreferences;
 //import com.batch.android.Config;
 //import com.batch.android.PushNotificationType;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
-
-import java.util.EnumSet;
-
-import uk.co.summermadness.sm16.MainActivity;
 
 /**
  * Created by Stephen on 10/06/2016.
